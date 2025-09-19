@@ -1,75 +1,80 @@
 \subsection{Group-equivariant CNNs}
 \label{subsec:se2cnn}
 
-Here, we work with planar rigid motions $\eucg = \R^2 \rtimes G$, where $G \subseteq O(2)$ (e.g., $SO(2), O(2), C_N, D_N$) acts on $\R^2$ by rotations/reflections. A $c$-channel feature field is a map $f:\R^2 \to \R^c$ transforming under the induced action of a representation $\rho: G \to GL(\R^c)$,
+% --- Setup/context ---
+Unlike other problems, reconstruction of 3D conformations from AFM images requires checking whether the 3D structures in the generation process of \AFiii are consistent with a given 2D reference image. 
+However, because the (unknown) orientation of the molecule under the reference image can be any element of the full 3D rotation group $\mathrm{SO}(3)$, a naive search for the ground-truth pose is computationally expensive.
+Moreover, AFM images arrive as a time series; consequently, inference must be fast enough to track frame-to-frame motion of the 3D conformation.
+
+With this goal in mind, we design a \emph{group equivariant CNN} (\gcnn) based approach that is robust to in-plane rotations and translations of the sample in the AFM image, 
+so that the same physical state yields the same representation regardless of how the sample is positioned on the image plane. 
+A standard CNN is naturally \emph{equivariant to translations} but not to rotations. 
+By contrast, a group-aware CNN (\gcnn) changes how features are indexed and how kernels share weights so that the entire network becomes equivariant to a chosen rotation group. 
+This architectural change reduces the need for heavy data augmentation and shortens training time; for these reasons, we adopt a \gcnn in \Model.
+
+% --- Standard CNN notation ---
+We model an AFM image as a scalar field $I:\mathbb{R}^2\to\mathbb{R}$ with pixel coordinate $x=(x_1,x_2)\in\mathbb{R}^2$. 
+In a standard CNN, intermediate feature maps are represented as functions $f:\mathbb{R}^2 \to \mathbb{R}^c$.
+The input image is first mapped to a $c$-channel field by convolution with channel-specific filters $\{\psi_i\}_{i=1}^c$:
+\begin{equation}
+    (\psi * I)(x)[i] := \int_{\mathbb{R}^2} \psi_i(y)\, I(x - y)\, dy,
+    \label{eq:lifting}
+\end{equation}
+where $*$ is convolution and $dy$ denotes the area element. 
+In practice, the integral is implemented as a finite sum over pixels; we keep the continuous notation for clarity.
+
+% --- Group and action for standard fields ---
+Here, we consider the planar motion group $\mathbb{R}^2 \rtimes C_N$, where $C_N=\{e,r,\dots,r^{N-1}\}\subset \mathrm{SO}(2)$ is a finite rotation subgroup.
+For scalar or standard $c$-channel fields (without group indexing that we later explain), 
+the action $\pi(t,g)$ of translation $t\in\mathbb{R}^2$ and rotation $g\in C_N$ is $(\pi(t,g)u)(x)\;:=\;u\big(g^{-1}(x-t)\big)$.
+
+Because convolution commutes with translations, a standard CNN is translation-equivariant. 
+For a single convolution with a (matrix-valued) kernel $k(y)\in\mathbb{R}^{c_{\mathrm{out}}\times c_{\mathrm{in}}}$,
 
 \begin{equation}
-    (\Ind \rho)(t,g)\, f(x) := \rho(g)\, f\!\big(g^{-1}(x-t)\big),
+    \begin{aligned}
+        \big(k * (\pi(t,e) u)\big)(x) 
+        &= \int_{\mathbb{R}^2} k(y)\, u(x-y-t)\, dy \\
+        &= (k * u)(x - t) = \big(\pi(t,e) (k * u)\big)(x).
+    \end{aligned}
+    \label{eq:trans-equiv}
 \end{equation}
 
-with $\rho$ a homomorphism. 
-For instance, for a scalar field $s:\R^2\to\R$, $\rho(g)=1$ (trivial representation), and for a vector field $v:\R^2\to\R^2$, $\rho(g)=g$ (standard representation). 
+Since a typical activation $\sigma$ is pointwise, $\sigma$ is also translation-equivariant, $\sigma (\pi(t, e) u) = \pi(t, e) \sigma (u)$ and the property propagates through the network.
+By contrast, the standard convolution is generally \emph{not} rotation-equivariant.
 
-The layer-wise equivariance we require is
+% --- g-CNN: lifting with group index ---
+The key idea of \gcnns is to \emph{lift} an image to a feature field indexed by group elements and to impose weight sharing consistent with the group action.
+Given a base filter $\psi:\mathbb{R}^2\to\mathbb{R}$, define its rotated copies $\psi_h(y):=\psi(h^{-1}y)$ for $h\in C_N$, and set
 
 \begin{equation}
-    \sigma\!\left(\Phi\big((\Ind \rho_{\mathrm{in}})(0,g)\, f_{\mathrm{in}}\big)\right)
-    \;=\; (\Ind \rho_{\mathrm{out}})(0,g)\, \sigma\!\left(\Phi(f_{\mathrm{in}})\right),
-    \quad \forall g \in G,
-    \label{eq:equivariance}
+    v(x)[h] \;:=\; \int_{\mathbb{R}^2} \psi(h^{-1}y)\, I(x-y)\, dy,
+    \qquad h\in C_N.
+    \label{eq:gcnn-lifting}
 \end{equation}
 
-where $\sigma$ is a pointwise nonlinearity and $\Phi$ is a cross-channel convolution specified by $(\Phi f)(x)=\int_{\R^2} k(y)\, f(x-y)\, dy$ with $k(y)\in\R^{c_{\mathrm{out}}\times c_{\mathrm{in}}}$. Translations are omitted in \eqref{eq:equivariance} because both convolution and pointwise $\sigma$ are equivariant to $\tau_t:=(\Ind \rho)(t,e)$.
+Thus $v:\mathbb{R}^2\times C_N\to\mathbb{R}$ is a group-indexed (orientation-channel) field.
 
-A sufficient way to ensure \eqref{eq:equivariance} is that (i) the nonlinearity is $G$-equivariant on channels,
+% --- Equivariance statement (concise) ---
+For such lifted fields, if the kernel satisties the following constraint about sharing weights, $k(gy)[h,h'] = k(y) \big[g^{-1}h, g^{-1}h'\big]$ for all $g, h, h' \in C_N$,
+then the group convolution commutes with $\pi(0,g)$:
 
 \begin{equation}
-    \sigma \circ (\Ind \rho_{\mathrm{in}})(0,g) = (\Ind \rho_{\mathrm{out}})(0,g) \circ \sigma, \qquad \forall g \in G,
-    \label{eq:nonlinear-equivariance}
+    \big(k * (\pi(0,g)v)\big)(x)[h] \;=\; \big(\pi(0,g)(k * v)\big)(x)[h].
+    \label{eq:gcnn-rot-equiv}
 \end{equation}
 
-and (ii) the convolution kernel satisfies the following constraint
+For details, see \cite{e2cnn}. 
+Hence, adding to the translation equivariance \cref{eq:trans-equiv}, we can construct CNNs equivariant to the chosen discrete rotation group $C_N$. 
+Channel-wise activations commute with the orientation relabeling, so equivariance to rotations (and translations) is preserved layer by layer.
+
+% --- Multi-block and pooling ---
+A practical architecture uses multiple lifted blocks $v_1,\dots,v_b$; the overall action is the block-diagonal (direct-sum) representation $\pi=\bigoplus_{i=1}^b \pi_i$.
+In \Model, because we require a vector invariant to rotations and translations, we apply a group pooling and a spacial pooling per block at last; i.e.,
 
 \begin{equation}
-    k(gx) = \rho_{\mathrm{out}}(g) k(x) \rho_{\mathrm{in}}(g^{-1}), \qquad \forall g \in G, x \in \R^2.
-    \label{eq:kernel-constraint}
+    \mathrm{Pool}(v_i)(x) := \max_{h\in C_N} v_i(x)[h], \quad
+    \mathrm{Pool}(v_i) := \text{Mean}_{x \in \R^2} v_i(x),
 \end{equation}
 
-While general steerable kernels can be constructed in Fourier space (e.g., \cite{e2cnn}), we instantiate the finite-rotation case using the (left) regular representation of $C_N=\{\,e,r,\dots,r^{N-1}\,\}$. 
-Given an image $I:\R^2\to\R$ and a base filter $\psi:\R^2\to\R$, define rotated copies $\psi_h(y):=\psi(h^{-1}y)$ and lift $I$ to a $C_N$-indexed feature field by group convolution
-
-\begin{equation}
-    v(x)[h] := (I * \psi_h)(x) = \int_{\R^2} \psi(h^{-1}y) I(x-y) dy, \qquad h\in C_N.
-    \label{eq:v-def}
-\end{equation}
-
-%Then $L_\psi:I\mapsto v$ intertwines the scalar action and the induced regular action, $v(g^{-1}x)[g^{-1}h] = \int_{\R^2} \psi(h^{-1}y) I(g^{-1}x - y) dy$.
-%For such fields, 
-Then the regular action permutes channels; in matrix form,
-
-\begin{equation}
-    \rho_{\mathrm{reg}}(g) = \Pi_g, \qquad (\Pi_g)_{h,h'}=\delta_{h,\,g h'}.
-    \label{eq:rho-reg-matrix}
-\end{equation}
-
-Channel-wise identical nonlinearities ($\rho_{\text{in}} = \rho_{\text{out}}$) are equivariant to these permutations:
-
-\begin{equation}
-    \sigma \big( \Pi_g v(x) \big)=\Pi_g \sigma \big( v(x) \big).
-    \label{eq:sigma-reg-commute}
-\end{equation}
-
-For a convolution layer, linear equivariance reads
-
-\begin{equation}
-    k(gx) = \Pi_g k(x) \Pi_{g^{-1}}, \quad \text{i.e.} \quad k(gx)[h,h']=k(x)\big[ g^{-1}h, g^{-1}h' \big].
-    \label{eq:kernel-operator}
-\end{equation}
-
-If channels are taken independent, then $k(x)[h,h']=\mathbf{0}$ when $h\neq h'$, hence each channel kernel is a rotated copy of the identity channel:
-
-\begin{equation}
-    k(x)[h,h] = k(h^{-1}x)[e,e].
-\end{equation}
-
-To implement invariant layers, one can apply group pooling, $v(x) \mapsto \text{max}(v(x))$, by which resulting features form $G$-invariant scalar fields.
+which yields features invariant to translations and rotations.
