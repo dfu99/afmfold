@@ -79,7 +79,7 @@ Dataset Size [frames] & 5M & 5M \\
 \subsubsection{Training}
 \label{subsubsec:afm-training}
 
-We adopted a CNN that is invariant under the discrete version of the $\SE$ group, namely $(\R^2, +) \rtimes C_8$. The specific implementation is described in \cref{alg:cnscnn}. 
+We adopted a CNN that is invariant under the discrete version of the $\mathrm{SE}(2)$ group, namely $(\R^2, +) \rtimes C_8$. The specific implementation is described in \cref{alg:cnscnn}. 
 
 All models in this paper were trained on a single node equipped with a NVIDIA RTX A6000 GPU (48~GB memory). 
 The training took approximately 5 hours for the \AK dataset, whereas it required about 64 hours for \flhac. 
