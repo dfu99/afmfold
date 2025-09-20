@@ -2,6 +2,7 @@
 @string{JCTC = "J. Chem. Theory Comput."}
 @string{JPCB = "J. Phys. Chem. B"}
 @string{Nature = "Nature"}
+@string{Science = "Science"}
 @string{bioRxiv = "bioRxiv"}
 @string{arXiv = "arXiv"}
 @string{NeurIPS = "Adv. Neural Inf. Process. Syst."}
@@ -9,9 +10,18 @@
 @string{JMB = "J. Mol. Biol."}
 @string{MolMicro = "Mol. Microbiol."}
 @string{SciRep = "Sci. Rep."}
-@string{ICML = "Proc. Mach. Learn. Res."}
+@string{PMLR = "Proc. Mach. Learn. Res."}
 @string{CVPR = "Proc. IEEE Conf. Comput. Vis. Pattern Recognit."}
 @string{eLife = "eLife"}
+@string{CommBiol = "Commun. Biol."}
+@string{NatCommun = "Nat. Commun."}
+@string{NatMachIntell = "Nat. Mach. Intell."}
+@string{COISB = "Curr. Opin. Struct. Biol."}
+@string{PRXLife = "PRX Life"}
+@string{ICML  = "Proc. Int. Conf. Mach. Learn."}
+@string{ICLR  = "Int. Conf. Learn. Represent."}
+@string{PMLR  = "Proc. Mach. Learn. Res."}
+@string{NatMethods = "Nat. Methods"}
 
 % --- References ---
 
@@ -24,6 +34,18 @@
   number  = {8016},
   pages   = {493--500},
   doi     = {10.1038/s41586-024-07487-w}
+}
+
+@article{bytedance2025protenix,
+  title        = {Protenix - Advancing Structure Prediction Through a Comprehensive AlphaFold3 Reproduction},
+  author       = {ByteDance AML AI4Science Team and Chen, Xinshi and Zhang, Yuxuan and Lu, Chan and Ma, Wenzhi and Guan, Jiaqi and Gong, Chengyue and Yang, Jincai and Zhang, Hanyu and Zhang, Ke and Wu, Shenghao and Zhou, Kuangqi and Yang, Yanping and Liu, Zhenyu and Wang, Lan and Shi, Bo and Shi, Shaochen and Xiao, Wenzhi},
+  year         = {2025},
+  journal      = bioRxiv,
+  publisher    = {Cold Spring Harbor Laboratory},
+  doi          = {10.1101/2025.01.08.631967},
+  URL          = {https://www.biorxiv.org/content/early/2025/01/11/2025.01.08.631967},
+  elocation-id = {2025.01.08.631967},
+  eprint       = {https://www.biorxiv.org/content/early/2025/01/11/2025.01.08.631967.full.pdf},
 }
 
 @article{Niina2020,
@@ -59,12 +81,42 @@
   doi       = {10.1038/s41586-021-03819-2}
 }
 
+@article{ahdritz2024openfold,
+  title     = {OpenFold: Retraining AlphaFold2 yields new insights into its learning mechanisms and capacity for generalization},
+  author    = {Ahdritz, Gustaf and Bouatta, Nazim and Floristean, Christina and Kadyan, Sachin and Xia, Qinghui and Gerecke, William and O’Donnell, Timothy J and Berenberg, Daniel and Fisk, Ian and Zanichelli, Niccol{\`o} and others},
+  journal   = NatMethods,
+  volume    = {21},
+  number    = {8},
+  pages     = {1514--1524},
+  year      = {2024},
+  publisher = {Nature Publishing Group US New York}
+}
+
+@article{mirdita2022colabfold,
+  title     = {ColabFold: making protein folding accessible to all},
+  author    = {Mirdita, Milot and Sch{\"u}tze, Konstantin and Moriwaki, Yoshitaka and Heo, Lim and Ovchinnikov, Sergey and Steinegger, Martin},
+  journal   = NatMethods,
+  volume    = {19},
+  number    = {6},
+  pages     = {679--682},
+  year      = {2022},
+  publisher = {Nature Publishing Group US New York}
+}
+
 @article{wohlwend2024boltz1,
   author    = {Wohlwend, Jeremy and Corso, Gabriele and Passaro, Saro and Getz, Noah and Reveiz, Mateo and Leidal, Ken and Swiderski, Wojtek and Atkinson, Liam and Portnoi, Tally and Chinn, Itamar and Silterra, Jacob and Jaakkola, Tommi and Barzilay, Regina},
   title     = {Boltz-1: Democratizing Biomolecular Interaction Modeling},
   year      = {2024},
   doi       = {10.1101/2024.11.19.624167},
   journal   = bioRxiv
+}
+
+@article{passaro2025boltz2,
+  author  = {Passaro, Saro and Corso, Gabriele and Wohlwend, Jeremy and Reveiz, Mateo and Thaler, Stephan and Somnath, Vignesh Ram and Getz, Noah and Portnoi, Tally and Roy, Julien and Stark, Hannes and Kwabi-Addo, David and Beaini, Dominique and Jaakkola, Tommi and Barzilay, Regina},
+  title   = {Boltz-2: Towards Accurate and Efficient Binding Affinity Prediction},
+  journal = bioRxiv,
+  year    = {2025},
+  doi     = {10.1101/2025.06.14.659707}
 }
 
 @article{maddipatla2025inverse,
@@ -85,11 +137,46 @@
   url       = {https://arxiv.org/abs/2506.04490}
 }
 
+@misc{levy2025solving,
+  title  = {Solving Inverse Problems in Protein Space Using Diffusion-Based Priors},
+  author = {Axel Levy and Eric Ryan Chan and Sara Fridovich-Keil and Frederic P Poitevin and Ellen D Zhong and Gordon Wetzstein},
+  year   = {2025},
+  url    = {https://openreview.net/forum?id=UYZRaUCLAg}
+}
+
+@inproceedings{CohenWelling2016_GCNN,
+  author    = {Cohen, Taco S. and Welling, Max},
+  title     = {Group Equivariant Convolutional Networks},
+  booktitle = NeurIPS,
+  volume    = {48},
+  pages     = {2990--2999},
+  year      = {2016},
+  url       = {https://proceedings.mlr.press/v48/cohenc16.html}
+}
+
+@inproceedings{CohenWelling2017_SteerableCNNs,
+  author    = {Cohen, Taco S. and Welling, Max},
+  title     = {Steerable {CNN}s},
+  booktitle = ICLR,
+  year      = {2017},
+  url       = {https://openreview.net/forum?id=rJQKYt5ll}
+}
+
 @inproceedings{e2cnn,
   title     = {{General E(2)-Equivariant Steerable CNNs}},
   author    = {Weiler, Maurice and Cesa, Gabriele},
   booktitle = NeurIPS,
   year      = {2019}
+}
+
+@inproceedings{WeilerEtAl2018_3DSteerableCNNs,
+  author    = {Weiler, Maurice and Geiger, Mario and Welling, Max and Boomsma, Wouter and Cohen, Taco S.},
+  title     = {3{D} Steerable {CNN}s: Learning Rotationally Equivariant Features in Volumetric Data},
+  booktitle = NeurIPS,
+  volume    = {31},
+  pages     = {},
+  year      = {2018},
+  url       = {https://papers.nips.cc/paper_files/paper/2018/hash/488e4104520c6aab692863cc1dba45af-Abstract.html}
 }
 
 @article{muller1996adenylate,
@@ -123,13 +210,13 @@
 }
 
 @article{delAlamo2022sampling,
-  author = {del Alamo, Diego and Sala, Davide and Mchaourab, Hassane S. and Meiler, Jens},
-  title = {Sampling alternative conformational states of transporters and receptors with AlphaFold2},
+  author  = {del Alamo, Diego and Sala, Davide and Mchaourab, Hassane S. and Meiler, Jens},
+  title   = {Sampling alternative conformational states of transporters and receptors with AlphaFold2},
   journal = eLife,
-  volume = {11},
-  pages = {e75751},
-  year = {2022},
-  doi = {10.7554/eLife.75751}
+  volume  = {11},
+  pages   = {e75751},
+  year    = {2022},
+  doi     = {10.7554/eLife.75751}
 }
 
 @article{Wayment-Steele2023MSAClustering,
@@ -140,6 +227,127 @@
   volume       = {625},
   pages        = {832--839},
   doi          = {10.1038/s41586-023-06832-9},
+}
+
+@article{daSilva2024_subsampledAF2,
+  title        = {High-throughput prediction of protein conformational distributions with subsampled AlphaFold2},
+  author       = {Monteiro da Silva, Gabriel and Cui, Jennifer Y. and Dalgarno, David C. and Lisi, George P. and Rubenstein, Brenda M.},
+  journal      = NatCommun,
+  year         = {2024},
+  volume       = {15},
+  number       = {1},
+  pages        = {2464},
+  doi          = {10.1038/s41467-024-46715-9}
+}
+
+@article{KalakotiWallner2025_AFsample2,
+  author       = {Kalakoti, Yogesh and Wallner, Bj{\"o}rn},
+  title        = {AFsample2 predicts multiple conformations and ensembles with AlphaFold2},
+  journal      = CommBiol,
+  year         = {2025},
+  volume       = {8},
+  number       = {1},
+  pages        = {373},
+  doi          = {10.1038/s42003-025-07791-9}
+}
+
+@article{NoeOlssonKohlerWu2019_BoltzmannGenerators,
+  author  = {No{\'e}, Frank and Olsson, Simon and K{\"o}hler, Jonas and Wu, Hao},
+  title   = {Boltzmann generators: Sampling equilibrium states of many-body systems with deep learning},
+  journal = Science,
+  year    = {2019},
+  volume  = {365},
+  number  = {6457},
+  pages   = {eaaw1147},
+  doi     = {10.1126/science.aaw1147}
+}
+
+@misc{jing2023eigenfold,
+  title         = {EigenFold: Generative Protein Structure Prediction with Diffusion Models}, 
+  author        = {Bowen Jing and Ezra Erives and Peter Pao-Huang and Gabriele Corso and Bonnie Berger and Tommi Jaakkola},
+  year          = {2023},
+  eprint        = {2304.02198},
+  archivePrefix = arXiv,
+  primaryClass  = {q-bio.BM}
+}
+
+@inproceedings{jing2024alphaflow,
+  title     = {AlphaFold Meets Flow Matching for Generating Protein Ensembles},
+  author    = {Jing, Bowen and Berger, Bonnie and Jaakkola, Tommi},
+  booktitle = ICML,
+  series    = PMLR,
+  year      = {2024},
+  volume    = {896},
+  pages     = {22277--22303},
+}
+
+@article{Zheng2024_DiG_NatMachIntell,
+  author  = {Zheng, Shuxin and He, Jiyan and Liu, Chang and Shi, Yu and Lu, Ziheng and Feng, Weitao and Ju, Fusong and Wang, Jiaxi and Zhu, Jianwei and Min, Yaosen and Zhang, He and Tang, Shidi and Hao, Hongxia and Jin, Peiran and Chen, Chi and No{\'e}, Frank and Liu, Haiguang and Liu, Tie-Yan},
+  title   = {Predicting equilibrium distributions for molecular systems with deep learning},
+  journal = NatMachIntell,
+  year    = {2024},
+  volume  = {6},
+  number  = {5},
+  pages   = {558--567},
+  doi     = {10.1038/s42256-024-00837-3}
+}
+
+@article{Cheng2024_AlphaFolding,
+  author  = {Cheng, Kaihui and Liu, Ce and Su, Qingkun and Wang, Jun and Zhang, Liwei and Tang, Yining and Yao, Yao and Zhu, Siyu and Qi, Yuan},
+  title   = {AlphaFolding: 4D Diffusion for Dynamic Protein Structure Prediction with Reference and Motion Guidance},
+  journal = arXiv,
+  year    = {2024},
+  eprint  = {2408.12419},
+  url     = {https://arxiv.org/abs/2408.12419}
+}
+
+@inproceedings{Jing2024mdgen,
+  author    = {Jing, Bowen and St{\"a}rk, Hannes and Jaakkola, Tommi and Berger, Bonnie},
+  title     = {Generative Modeling of Molecular Dynamics Trajectories},
+  booktitle = NeurIPS,
+  year      = {2024},
+  volume    = {37},
+  pages     = {40534--40564},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2024/file/478b06f60662d3cdc1d4f15d4587173a-Paper-Conference.pdf}
+}
+
+@article{jin2025p2dflow,
+  author    = {Jin, Yaowei and Huang, Qi and Song, Ziyang and Zheng, Mingyue and Teng, Dan and Shi, Qian},
+  title     = {P2DFlow: A Protein Ensemble Generative Model with SE(3) Flow Matching},
+  journal   = JCTC,
+  year      = {2025},
+  volume    = {21},
+  number    = {6},
+  pages     = {3288--3296},
+  doi       = {10.1021/acs.jctc.4c01620}
+}
+
+@article{bioemu2025,
+  title     = {Scalable emulation of protein equilibrium ensembles with generative deep learning},
+  author    = {Lewis, Sarah and Hempel, Tim and Jim{\'e}nez-Luna, Jos{\'e} and Gastegger, Michael and Xie, Yu and Foong, Andrew YK and Satorras, Victor Garc{\'\i}a and Abdin, Osama and Veeling, Bastiaan S and Zaporozhets, Iryna and Chen, Yaoyi and Yang, Soojung and Foster, Adam E. and Schneuing, Arne and Nigam, Jigyasa and Barbero, Federico and Stimper Vincent and  Campbell, Andrew and Yim, Jason and Lienen, Marten and Shi, Yu and Zheng, Shuxin and Schulz, Hannes and Munir, Usman and Sordillo, Roberto and Tomioka, Ryota and Clementi, Cecilia and No{\'e},  Frank},
+  journal   = Science,
+  pages     = {eadv9817},
+  year      = {2025},
+  publisher = {American Association for the Advancement of Science},
+  doi       = {10.1126/science.adv9817}
+}
+
+@article{Liu2025_ExEnDiff,
+  author  = {Liu, Yikai and Yu, Zongxin and Lindsay, Richard J. and Lin, Guang and Chen, Ming and Sahoo, Abhilash and Hanson, Sonya M.},
+  title   = {ExEnDiff: An Experiment-Guided Diffusion Model for Protein Conformational Ensemble Generation},
+  journal = PRXLife,
+  year    = {2025},
+  volume  = {3},
+  pages   = {023013},
+  doi     = {10.1103/PRXLife.3.023013}
+}
+
+@article{Liu2024_EGDiff,
+  author  = {Liu, Yikai and Sahoo, Abhilash and Yu, Zongxin and Lin, Guang and Chen, Ming and Hanson, Sonya M.},
+  title   = {EGDiff: An Experiment-Guided Diffusion Model for Protein Conformational Ensemble Generation},
+  journal = bioRxiv,
+  year    = {2024},
+  doi     = {10.1101/2024.10.04.616517}
 }
 
 @article{matsunaga2023endtoend,
@@ -166,11 +374,10 @@
 @article{Bertasius2021TimeSformer,
   title        = {Is Space-Time Attention All You Need for Video Understanding?},
   author       = {Gedas Bertasius and Heng Wang and Lorenzo Torresani},
-  journal      = ICML,
+  journal      = PMLR,
   year         = {2021},
   volume       = {139},
   pages        = {813--824},
-  note         = {arXiv:2102.05095},
 }
 
 @inproceedings{Wang2018NonLocalNetworks,
@@ -179,5 +386,4 @@
   booktitle    = CVPR,
   year         = {2018},
   pages        = {7794--7803},
-  note         = {arXiv:1711.07971},
 }
