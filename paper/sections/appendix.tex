@@ -166,19 +166,7 @@ $N_{\text{hidden-layers}} = 3$, $D_{\text{hidden}} = 64$, $D_{\text{out}} = N_{\
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\linewidth]{images/figures-05.png}
-    \caption{
-        \textbf{Validation results of noise robustness}.
-        \textbf{(a)} AFM images at various noise levels, where the noise level denotes the standard deviation of Gaussian noise applied in pseudo-AFM images. 
-        \textbf{(b)} Results of conformation reconstruction from AFM images with different noise levels, evaluated in RMSD. The horizontal axis indicates the noise level of the training images, and the vertical axis indicates the noise level of the reference images during inference. The pseudo-AFM images for training were generated from the training conformations (see \cref{subsubsec:afm-prep}), whereas the reference AFM images for validation were generated from MD simulation structures as well as in the other results. For each combination, we predicted conformations from 20 different images, and the average RMSD is plotted. 
-        \textbf{(c)} Under the same conditions as in (b), the success rate of structural prediction was plotted, defining success as RMSD $< 0.3$ nm.
-    }
-    \label{fig:noise_robustness}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\linewidth]{images/figures-08.png}
+    \includegraphics[width=\linewidth]{images/figures-07.png}
     \caption{
         \textbf{Selected candidate conformations for \AK and MolProbity evaluation for them}.
         \textbf{(a)} Projection of the candidate conformations into the inter-domain distance space. 
@@ -193,7 +181,7 @@ $N_{\text{hidden-layers}} = 3$, $D_{\text{hidden}} = 64$, $D_{\text{out}} = N_{\
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\linewidth]{images/figures-07.png}
+    \includegraphics[width=0.8\linewidth]{images/figures-08.png}
     \caption{
         \textbf{Selected candidate conformations for \flhac and MolProbity evaluation for them}.
         \textbf{(b)} MolProbity score. 
