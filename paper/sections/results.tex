@@ -67,10 +67,11 @@ Overall, we observed a reasonable correlation between the mean squared errors of
         \textbf{(a)} Projection of a 450 ns MD simulation trajectory into the inter-domain distance space. 
         \textbf{(b)} Projection of the candidate conformations into the inter-domain distance space. 
         \textbf{(c)} A histogram of root squared error in the inter-domain distance space between the pre-trained CNN's outputs and ground-truth. 
-        The CNN predicted inter-domain distance from pseudo-AFM images, which ware generated from randomly selected MD conformations. 
-        The root mean squared error (RMSE) was 0.183 nm.
-        \textbf{(d)} A scatter plot of root squared error in the inter-domain distance space and ${\mathrm{C}\alpha}$-atom RMSDs. 
+        The CNN predicted inter-domain distance from pseudo-AFM images, which were generated from randomly selected MD conformations. 
+        The root mean squared error (RMSE) was 0.254 nm.
+        \textbf{(d)} A scatter plot of root squared error in the inter-domain distance space and heavy-atom RMSDs. 
         The RMSD was computed between the conformation generated with \AFiii steering using the predicted CV values, and the ground-truth conformation.
+        \textbf{(e)} A histogram of heavy-atom RMSDs that were computed about randomly selected MD conformations and predicted conformations. The mean value was 0.281 nm.
         }
     \label{fig:ak_cnn_training}
 \end{figure}
@@ -110,9 +111,17 @@ Conversely, if the reference images are low-noise, highly reliable predictions a
     \includegraphics[width=\linewidth]{images/figures-03.png}
     \caption{
         \textbf{Evaluation of prediction accuracy}. 
-        \textbf{(a)} Histogram of RMSD between predicted and ground-truth structures (mean: 0.273 nm). 
-        \textbf{(b)} Histogram of correlation coefficients (C.C.) between reference images and rigid-body fitted predicted images (mean: 0.997). 
-        \textbf{(c)} Scatter plot of C.C. and RMSD, indicating a negative correlation between image similarity and structural accuracy.
+        Panels (a) and (b) present the evaluations under noise-free conditions, whereas panels (c–f) evaluate the robustness of the predictions with respect to noise.
+        \textbf{(a)} Histogram of correlation coefficients (c.c.) between reference images and rigid-body fitted predicted images (mean: 0.998). 
+        \textbf{(b)} Scatter plot of c.c. and RMSD, indicating a negative correlation between image similarity and structural accuracy.
+        \textbf{(c)} Scatter plot of c.c. and RMSD using reference images with 0.3 nm Gaussian noise. 
+        Compared with panel (b), which was computed using noise-free images, the c.c. values are overall lower, and this is accompanied by a general upward shift in the RMSD distribution.
+        \textbf{(d)} Examples of simulated AFM images at different noise levels used in the validation of noise-robustness. 
+        As in the noise-free examples, the images were generated based on randomly selected structures from the MD simulations.
+        \textbf{(e)} Mean RMSD between the estimated structures and the ground-truth structures under conditions where noise was introduced in both the training and reference data. 
+        The x axis indicates the noise level in the training data, and the y axis indicates that in the reference data. 
+        For each condition, structure estimation was performed for 20 different images, and the average value is presented.
+        \textbf{(e)} Mean c.c. between the reproduced pseudo-AFM images and the reference images under the same conditions with the panel (e). 
     }
     \label{fig:ak_accuracy}
 \end{figure}
