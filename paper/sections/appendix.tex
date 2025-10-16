@@ -50,17 +50,6 @@ and $y_{\text{max}}$ is chosen at evenly spaced points in $[0.6,1.6]$.
 By evaluating all combinations of these choices, we obtained $5\times 5 = 25$ distinct schedule settings in total. 
 For each setting we generated five independent conformations and computed the averages of evaluation metrics of them. 
 
-\paragraph{Systems and collective variables}
-Here, we describe the choice of protein system and the collective variables (CVs) on which restraints are applied.  
-The way restraints are imposed can in principle depend on factors such as protein size or the specific CVs chosen, 
-but our goal is to provide a concrete reference point that can serve as a guideline when users consider how to set the guidance strength.  
-
-Specifically, we focus on \flhac, and, consistent with the main text, we selected the domain pairs \acdi--\acdiv and \acdii--\acdiii as variables.  
-As a baseline, preliminary \AFiii predictions without restraints on \flhac yield inter-domain distances of $(3.47\mathrm{nm},\,4.38\mathrm{nm})$.  
-We then specify two target distance vectors $\phi_{\text{object}}$:  
-(i) an in-distribution target, $\phi_{\text{object}}=(2.5\mathrm{nm},\,4.5\mathrm{nm})$, extracted from our in-house MD trajectory; and  
-(ii) an out-of-distribution target, $\phi_{\text{object}}=(2.0\mathrm{nm},\,3.0\mathrm{nm})$, which we did not observe in the PDB or in the MD trajectory.
-
 \begin{equation}
     \begin{split}
         \eta(\hat{t}) =
@@ -85,43 +74,75 @@ We then specify two target distance vectors $\phi_{\text{object}}$:
     \end{split}
 \end{equation}
 
+\paragraph{Systems and collective variables}
+Here, we describe the choice of protein system and the collective variables (CVs) on which restraints are applied.  
+The way restraints are imposed can in principle depend on factors such as protein size or the specific CVs chosen, 
+but our goal is to provide a concrete reference point that can serve as a guideline when users consider how to set the guidance strength.  
+
+In this experiments, we investigated the relationship between the guidance strength and the physical plausibility of the generated structures for both \AK (214 residues) and \flhac (346 residues).
+The choice of CVs used for applying the guidance followed the same setup as in the main part---that is, LID–CORE, CORE–AMPbd, and AMPbd–LID for \AK, and \acdi–\acdiv and \acdii–\acdiii for \flhac.
+As a reference, under guidance-free conditions, \AFiii predicts structures with inter-domain distances of $(2.85\,\mathrm{nm},\,2.19\,\mathrm{nm},\,3.45\,\mathrm{nm})$ for \AK, and $(3.47\,\mathrm{nm},\,4.38,\mathrm{nm})$ for \flhac.
+We conducted two types of experiments for these proteins:
+(i) \textbf{in-distribution targets}, which correspond to physically plausible inter-domain distances observed in MD simulations. Specifically, $(2.41\,\mathrm{nm},\,2.01,\mathrm{nm},\,2.68,\mathrm{nm})$ was chosen for \AK and $(2.5\,\mathrm{nm},\,4.5\,\mathrm{nm})$ for \flhac.
+(ii) \textbf{out-of-distribution targets}, which represent physically implausible inter-domain distances not observed in MD simulations. In this case, $(1.21\,\mathrm{nm},\,1.51,\mathrm{nm},\,0.53,\mathrm{nm})$ was chosen for \AK and $(2.0\,\mathrm{nm},\,3.0,\mathrm{nm})$ for \flhac.
+
+
 %\subsection{Results}
 %\label{app:guidance_results}
 
 Across both the in-distribution and out-of-distribution targets, three clear patterns emerge.  
 
 \begin{itemize}
-    \item First, there is a dividing line in the MSE landscape, approximately connecting $(\hat{t}_{\text{start}}, y_{\text{max}})=(0.65,\,0.60)$ and $(0.73,\,1.60)$ (see \cref{fig:guidance_scheduling} (c, i)).
+    \item First, there is a dividing line in the MSE landscape, approximately connecting $(\hat{t}_{\text{start}}, y_{\text{max}})=(0.65,\,0.60)$ and $(0.73,\,1.60)$ (see  \cref{fig:guidance_scheduling_ak} (b, h) and \cref{fig:guidance_scheduling_flhac} (b, h)).
         On the right side of this line (i.e., with later $\hat{t}_{\text{start}}$ and smaller $y_{\text{max}}$), the MSE between the target CVs and the generated conformation's CVs rises sharply. 
-    \item Second, the MolProbity-score contours are roughly circular, centered near $(\hat{t}_{\text{start}}, y_{\text{max}})=(0.40,\,1.60)$, rather than linear (see \cref{fig:guidance_scheduling} (b, h)).
-        For example, the contour at 1.9 in the in-distribution case and at 2.7 in the out-of-distribution case both illustrate this pattern. 
+    \item Second, the MolProbity-score contours are roughly circular, centered near $(\hat{t}_{\text{start}}, y_{\text{max}})=(0.40,\,1.60)$, rather than linear (see \cref{fig:guidance_scheduling_ak} (a, g) and \cref{fig:guidance_scheduling_flhac} (a, g)).
     \item Third, combining these two observations, we find that starting the guidance early (small $\hat{t}_{\text{start}}$) and keeping the restraint weak (low $y_{\text{max}}$) enables the application of constraints 
         without substantially compromising the physical plausibility of the generated structures.
 \end{itemize}
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.9\linewidth]{images/figures-06.png}
+    \includegraphics[width=0.9\linewidth]{images/figures-05.png}
     \caption{
-        \textbf{Validation results of guidance scheduling}.
-        \textbf{(a)} All guidance schedules evaluated in this study. 
+        All guidance schedules evaluated in this study. 
         The setting used in our main experiments, $\hat{t}_{\text{start}}=0.6$ and $y_{\text{max}}=0.6$, is highlighted with a thick red line. 
-        \textbf{(b)--(g)} Results for the in-distribution target. 
-        \textbf{(h)--(m)} Results for the out-of-distribution target. 
-        \textbf{(b), (h)} Average MolProbity scores. 
-        \textbf{(c), (i)} Mean squared error (MSE). 
-        \textbf{(d), (j)} Mean inter-domain distance vectors (25 points, one per schedule setting) of the generated conformations, with point colors representing the MolProbity scores. 
-        \textbf{(e), (f), (g), (k), (l), (m)} Evaluation metrics obtained during MolProbity scoring: clash score, Ramachandran favored rate (\%), and rotamer outlier rate (\%).
         }
     \label{fig:guidance_scheduling}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{images/figures-06.png}
+    \caption{
+        \textbf{Results for \AK}. The upper 6 panels ((a)--(f)) shows results for the in-distribution target, and the lower 6 panels ((g)--(l)) shows results for the out-of-distribution target. 
+        \textbf{(a), (g)} Average MolProbity scores. 
+        \textbf{(b), (h)} Mean squared error (MSE). 
+        \textbf{(c), (i)} The inter-domain distance of estimated conformations (25 points, each one represents average inter-domain distance of corresponding schedule setting), with point colors representing the MolProbity scores. 
+        The cross point means that of the crystal structures (PDBID: 4AKE (open) and 1AKE (close)), and circle point means that of the target (every estimated structures were generated steered towards this point).
+        \textbf{(d), (e), (f), (j), (k), (l)} Evaluation metrics obtained during MolProbity scoring: clash score, Ramachandran favored rate (\%), and rotamer outlier rate (\%).
+        }
+    \label{fig:guidance_scheduling_ak}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{images/figures-07.png}
+    \caption{
+        \textbf{Results for \flhac}. As before, the upper 6 panels ((a)--(f)) shows results for the in-distribution target, and the lower 6 panels ((g)--(l)) shows results for the out-of-distribution target. 
+        \textbf{(a), (g)} Average MolProbity scores. 
+        \textbf{(b), (j)} Mean squared error (MSE). 
+        \textbf{(c), (i)} The inter-domain distance of estimated conformations, with point colors representing the MolProbity scores. 
+        The cross point means that of the crystal structure (PDBID: 3A5I), and circle point means that of the target.
+        \textbf{(d), (e), (f), (j), (k), (l)} Evaluation metrics obtained during MolProbity scoring: clash score, Ramachandran favored rate (\%), and rotamer outlier rate (\%).
+        }
+    \label{fig:guidance_scheduling_flhac}
 \end{figure}
 
 \subsection{Conclusion}
 Overall, we observed the expected trade-off: stronger guidance improves agreement with the target, but tends to degrade structural plausibility. 
 At the same time, we obtained an additional insight: rather than applying strong restraints only in the final stages of the reverse process, it is more effective to apply weak restraints from the early stages.  
-In fact, for the out-of-distribution case, we observe a plateau around $\hat{t}_{\text{start}} \approx 0.5,\, y_{\text{max}} \approx 0.6$ where the values remain stable at approximately $\text{MSE} \approx 0.7$ and MolProbity score $\approx 2.5$.  
-By contrast, near $\hat{t}_{\text{start}} \approx 0.7,\, y_{\text{max}} \approx 1.6$, the region with comparable values is much narrower (see \cref{fig:guidance_scheduling} (h,i)).  
-In other words, in the latter setting, even small deviations from the optimal point cause either the MSE or the MolProbity score to rise sharply.
+In fact, regions with low MSE consistently appear in the area of $\hat{t}{\text{start}} \lessapprox 0.6$ (see \cref{guidance_scheduling_ak} (b,h) and \cref{guidance_scheduling_flhac} (b,h)), 
+and among them, regions with low MolProbity scores are located where $\hat{y}{\text{max}}$ is relatively small (see \cref{guidance_scheduling_ak} (a,g) and \cref{guidance_scheduling_flhac} (a,g)).
 
 Based on these observations, in our study we adopt $\hat{t}_{\text{start}}=0.6$ and $y_{\text{max}}=0.6$ that allow effective guidance without substantially degrading structural quality.
 
@@ -167,7 +188,7 @@ $N_{\text{hidden-layers}} = 3$, $D_{\text{hidden}} = 64$, $D_{\text{out}} = N_{\
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\linewidth]{images/figures-07.png}
+    \includegraphics[width=\linewidth]{images/figures-08.png}
     \caption{
         \textbf{Selected candidate conformations for \AK and MolProbity evaluation for them}.
         \textbf{(a)} Projection of the candidate conformations into the inter-domain distance space. 
@@ -182,7 +203,7 @@ $N_{\text{hidden-layers}} = 3$, $D_{\text{hidden}} = 64$, $D_{\text{out}} = N_{\
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\linewidth]{images/figures-08.png}
+    \includegraphics[width=0.8\linewidth]{images/figures-09.png}
     \caption{
         \textbf{Selected candidate conformations for \flhac and MolProbity evaluation for them}.
         \textbf{(b)} MolProbity score. 
