@@ -1,5 +1,8 @@
 *.aux
 *.bbl
+*.bcf
+main.log
+supplementary.log
 *.blg
 *.log
 *.out
@@ -9,6 +12,7 @@ main.run.xml
 *.dat
 *.npy
 *.gif
+*.png
 *.jpg
 *.jpeg
 *.pdf
