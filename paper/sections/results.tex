@@ -115,8 +115,8 @@ The g-CNN was trained on the training data to learn the relationship between AFM
 \Cref{fig:flhac_results} shows the the estimated structures of the three AFM images selected from the total 159 AFM images. The estimated structures by \Model are fitted to the real AFM image by exaustively rotating and translating them, and then their structures and pseudo AFM images were drawn for comparison with the real AFM images.
 As a comparison, we performed the same fitting procedure for the crystal structure (PDB ID: 3A5I) of \flhac to the three AFM images (also shown in \Cref{fig:flhac_results}). 
 %rigid-body fitting for both structures estimated by \Model and the PDB database structure.
-For almost all cases, \Model reproduced more sililar images with reference images than the PDB database structure (see \cref{fig:flhac_statistic} (b)).
-Although it is difficult to distinguish by visual inspection alone, in all three cases, the correlation coefficient between the pseudo AFM image and the real AFM image was consistently higher for the estimated structure than for the crystal structure.
+%For all cases, \Model reproduced more sililar images with reference images than the PDB database structure (see \cref{fig:flhac_statistic} (b)).
+Although it is difficult to distinguish by visual inspection alone, in all three cases, the c.c. value between the pseudo AFM image and the real AFM image was consistently higher for the estimated structure than for the crystal structure. It is noted that, however, the improvement in c.c. is only slight. This is because the overall c.c. value is largely dominated by whether the molecule is correctly positioned at the center of the image, while the influence of finer structural details such as subtle surface features is relatively minor in comparison.
 
 \begin{figure}[htbp]
     \centering
@@ -142,13 +142,15 @@ Although it is difficult to distinguish by visual inspection alone, in all three
     \label{fig:flhac_statistic}
 \end{figure}
 
-To evaluate the predicted conformations, we computed the inter-domain distance between \acdii and \acdiv for all estimated structures.
-This distance serves as a useful indicator to distinguish between open and closed conformations.
-The resulting histogram is shown in \cref{fig:flhac_statistic}(c).
-For comparison, we also generated 100 structures using AlphaFlow\cite{jing2024alphaflow}, BioEmu\cite{bioemu2025}, and \AFii\cite{mirdita2022colabfold} with MSA subsampling, and plotted their distributions together.
+Next, we verified the estimated conformations by \Model using the total 159 images. \Cref{fig:flhac_statistic}~(b) shows the comparison of the c.c. values between the estimated structures by \Model and the crystal structure with the real AFM images. Again, in almost alll cases, the c.c. value for the estimated structure was higher than that for the crystal structure. Interestingly, some of the c.c. values of \Model take higher values when the esimated structures have more open conformation in \Cref{fig:flhac_statistic}~(b) (measured by the distance bewteen \acdii and \acdiv, which serves as a useful indicator to distinguish between open and closed conformations). This might suggest that the flexibility of the inter-domain motions of \flhac is well captured by \Model.
+%This is because the open conformation has more surface features that are more easily captured by the AFM images.
+
+Then, to quantify the flexiblity of the inter-domain motions captured by \Model, we computed the distribution density of the inter-domain distance between \acdii and \acdiv for all estimated structures (\cref{fig:flhac_statistic}(c)). 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+For comparison, we also generated 100 conformations using AI-based MD  surrogate models, AlphaFlow\cite{jing2024alphaflow}, BioEmu\cite{bioemu2025}, and \AFii\cite{mirdita2022colabfold} with MSA subsampling. 
 Compared with these models, \Model tends to predict more open conformations.
 
-To interpret this result, we analyzed the predicted conformations as a time series.
+We analyzed the predicted conformations as a time series.
 As shown in \cref{fig:flhac_statistic}(e), the time correlation between adjacent frames (with a time lag of 1~ms) remains relatively high ($ \sim 0.5$).
 Moreover, \Model does not simply predict constant values; as illustrated in \cref{fig:flhac_statistic}(d), the predicted inter-domain distances exhibit substantial transitions over time.
 When we randomly shuffled the frame order, the temporal correlation nearly vanished, as indicated by the dotted line in \cref{fig:flhac_statistic}(e).
