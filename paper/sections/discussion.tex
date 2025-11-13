@@ -14,17 +14,17 @@ It has the potential to serve as a powerful tool for interpreting HS-AFM movies 
 %Across our evaluations, \Model delivered competitive prediction accuracy at low computational cost.
 %Therefore, \Model can help deepen understanding of biological processes---for example, by quantifying large-scale domain rearrangements along putative pathways and by prioritizing follow-up measurements in single-molecule studies.
 
-As a limitation of \Model, it requires the CVs to be estimated from the AFM image, which is a pre-processing step.
-The \Model framework can be readily extended by altering the physical observables it incorporates.
-While we used inter-domain distances here, it can incorporate residue-level distance restraints, enabling AFM-guided reconstructions that capture finer-grained motions without a disproportionate increase in runtime.
+A limitation of \Model is that it requires a priori definition of CVs as features to be estimated from the AFM image. If it is challenging to define appropriate CVs a priori, one could first perform structural sampling using methods such as AFlow, BioEmu, or MSA subsampling, and then identify meaningful CVs by applying dimensionality reduction techniques like PCA to extract important features. 
+The \Model framework is general, and as long as the chosen CVs are differentiable with respect to atomic Cartesian coordinates and can be used for guiding \AFiii, a wide variety of CV types can be incorporated. For example, we focused on inter-domain distances as CVs in this work, ohter CVs, such as residue-level distance restraints can be used, to enable AFM-guided reconstruction of finer-grained motions without a significant increase in computational cost. 
 
 %\paragraph{Limitations \& Future Work}
 % Candidates: Weaknesses, Constraints, Challenges
-\Model infers conformations from a single AFM image and currently does not quantify predictive uncertainty due to image noise or molecular orientation.
+Another limitation of \Model is that it infers conformations from a single AFM image and currently does not quantify predictive uncertainty due to image noise or molecular orientation. 
 Extending the framework to estimate uncertainty would make the predictions easier to interpret \cite{Kendall2017Uncertainty}.
 Moreover, AFM image sequences constitute time-series data in which poses change only slightly between adjacent frames; incorporating temporal dependencies---for example, with TimeSformer \cite{Bertasius2021TimeSformer} or non-local networks \cite{Wang2018NonLocalNetworks}---could further improve fidelity.
-Finally, in this work we steered \AFiii's sampling using AFM images; consequently, neither thermodynamic stability nor explicit physical priors is incorporated.
-In the future, conditioning the prior of an ensemble generative model should enable integrated modeling that unifies experimental measurements, physical priors, and computational inference.
+
+Finally, in this work we steered \AFiii's sampling only using AFM images; consequently, neither structural stability nor explicit physical priors is incorporated. 
+In the future, conditioning the prior (such as Boltz-2's physical potenal) of an ensemble generative model should enable integrated modeling that unifies experimental measurements, physical priors, and computational inference.
 
 \section{Code Availability Statement}
 text here
