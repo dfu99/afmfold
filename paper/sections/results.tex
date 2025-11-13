@@ -89,7 +89,7 @@ Structurally, it comprises four domains (\acdi, \acdii, \acdiii, and \acdiv) and
 Previous studies using X-ray crystallography and mutational analysis indicate that hinge motions among these domains influence transport activity and motility \cite{saijo-hamano2010flha}. 
 %Here, we applied \Model to real experimental AFM images of \flhac to evaluate its ability to reconstruct the 3D structure of \flhac from AFM images. 
 
-Here, to evaluate the applicability of \Model to real AFM data, we estimated the conformations of \flhac using \Model from 159 HS-AFM images of the \flhac monomer.
+Here, to evaluate the applicability of \Model to real AFM data \cite{inoue_structural_2019}, we estimated the conformations of \flhac using \Model from 159 HS-AFM images of the \flhac monomer.
 It should be noted that, whereas conventional flexible fitting methods for capturing structural changes typically require hours to days of computation per AFM image even with a coarse-grained model \cite{Niina2020}, \Model allows estimation of conformations from each AFM image in approximately one minute on a single GPU (considering training time, total computation time is less than the conventional flexible fitting methods). This enabled, for the first time, the processing of as many as 159 AFM images in this study.
 
 \paragraph{Training of the g-CNN}
@@ -142,7 +142,7 @@ Next, we verified the estimated conformations by \Model using the total 159 imag
 %This is because the open conformation has more surface features that are more easily captured by the AFM images.
 
 To quantify the flexiblity of the inter-domain motions captured by \Model, we computed the distribution density of the inter-domain distance between \acdii and \acdiv for all the estimated structures (\cref{fig:flhac_statistic}(c)). 
-For comparison, we also generated conformations using AI-based structure generation models, AlphaFlow \cite{jing2024alphaflow}, BioEmu \cite{bioemu2025}, and \AFii with MSA subsampling \cite{mirdita2022colabfold}. 
+For comparison, we also generated conformations using AI-based structure generation models, AlphaFlow \cite{jing2024alphaflow}, BioEmu \cite{bioemu2025}, and \AFii with MSA subsampling \cite{delAlamo2022sampling}. 
 These methods are expected to approximate long-time behaviors of \flhac which are not accessible by brute-force MD simulations. 
 Interestingly, compared with theese models, \Model tends to predict more open conformational states. 
 %Compared with these models, \Model tends to predict more open conformations.
