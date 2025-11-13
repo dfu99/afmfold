@@ -17,7 +17,7 @@ cd afmfold
 
 # Unzip the released data
 wget https://zenodo.org/records/17597490/files/afmfold.zip
-unzip results.zip
+unzip afmfold.zip
 ls results
 
 # Install dependancies
