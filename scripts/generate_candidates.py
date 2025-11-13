@@ -3,6 +3,7 @@ import mdtraj as md
 import math
 from tqdm import tqdm
 from pathlib import Path
+import argparse
 
 from afmfold.domain import get_domain_pairs, compute_domain_distance
 from afmfold.inference import conditional_generation
@@ -88,6 +89,11 @@ def make_candidates(
                 shutil.rmtree(d)
                 
 if __name__ == "__main__":
-    native_pdb = "/data/kawai/TFEP/afmfold/storage/3a5i.pdb"
-    name = "3a5i"
-    make_candidates(native_pdb, name)
+    parser = argparse.ArgumentParser(description="Parse arguments for training AFM image generator.")
+    parser.add_argument('--native-pdb', type=str, required=True, help='Path to the reference PDB file.')
+    parser.add_argument('--name', type=str, required=True, help='Name of the protein')
+    parser.add_argument('--json-file', type=str, required=True, help='Json path')
+    parser.add_argument('--out-dir', type=str, required=True, help='Output dir')
+    args = parser.parse_args()
+    
+    make_candidates(args.native_pdb, args.name, out_dir=args.out_dir, json_file=args.json_file)

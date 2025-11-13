@@ -100,10 +100,30 @@ ls ./storage
 
 # Run inference.
 nohup python scripts/inference.py \
+    --name 4ake \
     --image-path path/to/afm_images \
     --ckpt path/to/your_model.pt \
     --json-path ./storage/4ake-with-msa.json \
     --out-dir out/inference/ \
     --device cuda \
     > inference.log 2>&1 &
+```
+
+## Evaluation
+You can run rigid-body fitting for multiple results.
+For example, if you want to run rigid-body fitting for all inference results `out/inference/4ake/seed_*`, run the following command.
+
+```bash
+nohup python scripts/rigid_body_fitting.py \
+    --output_dir out/inference/4ake/seed_* \
+    --ref-pdb storage/4ake.pdb \
+    --resolution-nm 0.3 \
+    --name fitting \
+    --prove-radius-mean 1.0 \
+    --prove-radius-range 1.0 \
+    --prove-radius-step 1.0 \
+    --steps 50000 \
+    --skip-finished \
+    --use-ref-structure \  # Remove this when you do not want to run rigid-body fitting with PDB structure. 
+    > fitting.log 2>&1 &
 ```
