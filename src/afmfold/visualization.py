@@ -1,16 +1,29 @@
 import os
 import torch
 import numpy as np
+from tqdm import tqdm
 import matplotlib.pyplot as plt
-import matplotlib.patches.Circle as Circle
+from matplotlib.patches import Circle
 import matplotlib.cm as cm
 import matplotlib.ticker as ticker
 import matplotlib.gridspec as gridspec
 import matplotlib.colors as mcolors
 import cartopy.crs as ccrs
+import plotly.graph_objects as go
+from scipy.ndimage import center_of_mass
+import math
+import mdtraj as md
+import itertools
+from scipy import stats
+
+from afmfold.domain import compute_domain_distance, get_domain_pairs, get_domain_pair_names
+
+def get_color(i, n, cmap_name='tab10'):
+    cmap = plt.get_cmap(cmap_name)
+    return cmap(i % n / max(n-1, 1))
 
 def plot_afm(
-    images, 
+    *images, 
     resolution_nm=1.0,
     x_range=None, 
     y_range=None, 
@@ -24,6 +37,10 @@ def plot_afm(
     max_figures=10,
     axsize=4.0,
     padding=2.0,
+    text=None,
+    text_dict={},
+    traj=None,
+    traj_dict={},
     **kwargs
     ):
     """
@@ -39,9 +56,17 @@ def plot_afm(
         fig, axes: matplotlib Figure and Axes objects
     """
     # Initial setup
-    if isinstance(images, torch.Tensor):
-        images = images.detach().cpu().numpy()
-    
+    image_list =[]
+    for image in images:
+        if isinstance(image, torch.Tensor):
+            image_np = image.detach().cpu().to(torch.float32).numpy()
+        elif isinstance(image, np.ndarray):
+            image_np = image
+        else:
+            raise NotImplementedError()
+        image_list.append(image_np.reshape(-1,*image.shape[-2:]))
+    images = np.concatenate(image_list, axis=0)
+        
     if isinstance(x_range, torch.Tensor):
         x_range = x_range.detach().cpu()
     
@@ -119,8 +144,22 @@ def plot_afm(
             raise ValueError(f"Invalid unit: {unit} not in [ 'nm', 'nanometer', 'A', 'Å', 'angstrom']")
         
         ax.set_title(sub_title, {"fontsize": 1.2*fontsize})
-        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        if unit == "nm" or unit == "nanometer":
+            cbar.set_label("[nm]", fontdict={"fontsize": fontsize})
+        elif unit == "A" or unit == "Å" or unit == "angstrom":
+            cbar.set_label("[nm]", fontdict={"fontsize": fontsize})
     
+    if text is not None:
+        _ = ax.text(
+            0.95, 0.95, text, 
+            transform=ax.transAxes, fontsize=fontsize, 
+            color=text_dict.get("color", "white"), va=text_dict.get("va", "top"), ha=text_dict.get("ha", "right"),
+            )
+    
+    if traj is not None:
+        _ = plot_pdb_z_projection(traj, subplots=(fig, ax), unit=unit, r=traj_dict.get("r", 1.0), fontsize=fontsize, is_tqdm=traj_dict.get("is_tqdm", True))
+        
     # Save or display
     if save_path is not None:
         fig.savefig(save_path, dpi=600)
@@ -129,6 +168,73 @@ def plot_afm(
     plt.tight_layout()
 
     return fig, axes
+
+def plot_loss(
+    *args,
+    subplots=None,
+    axsize=(5.0, 3.0),
+    smoothness=100,
+    xlabel=None,
+    ylabel=None,
+    title=None,
+    grid=True,
+    ):
+    # Initialize
+    if subplots is None:
+        fig, ax = plt.subplots(figsize=axsize)
+    else:
+        fig, ax = subplots
+    
+    if len(args) == 1:
+        loss = args[0].ravel()
+        epochs = np.arange(len(loss))
+    elif len(args) == 2:
+        epochs = args[0].ravel()
+        loss = args[1].ravel()
+    else:
+        raise NotImplementedError(args)
+    
+    # Smooth
+    len_loss = len(loss.ravel()) // smoothness
+    target_loss = loss.ravel()[:len_loss*smoothness].reshape((len_loss, smoothness))
+    target_epochs = epochs[:len_loss*smoothness].reshape((len_loss, smoothness))
+    smoothed_loss = np.mean(target_loss, axis=1)
+    smoothed_epochs = np.median(target_epochs, axis=1)
+    
+    # Set xticks
+    xmax = np.max(smoothed_epochs)
+    if xmax <= 1000:
+        ax.set_xticks(np.linspace(0, xmax - 1, 10, dtype=int))
+    else:
+        xbin = int((xmax / 10) // 50 * 50)
+        xdecimal = 10 ** math.floor(math.log10(xmax))
+        xticks = np.arange(0, xmax, xbin)
+        ax.set_xticks(xticks)
+        ax.set_xticklabels([f"{x / xdecimal:.1f}" for x in xticks])
+        # Add [xdecimal] annotation to the right side
+        ax.text(
+            1.02, -0.09, f"[{xdecimal:.0e}]",
+            transform=ax.transAxes,
+            fontsize=9,
+            verticalalignment='bottom'
+        )
+    
+    # Plot
+    ax.plot(smoothed_epochs, smoothed_loss)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.grid(visible=grid)
+    ax.set_title(title)
+    return fig, ax
+
+def plot_3d_surface(surface, title=None):
+    fig_tip = go.Figure(data=[go.Surface(z=surface)])
+    fig_tip.update_traces(contours_z=dict(show=True, usecolormap=True,
+                                         highlightcolor="limegreen", project_z=True))
+    fig_tip.update_layout(title=title, autosize=False,
+                         width=600, height=500,
+                         margin=dict(l=65, r=50, b=65, t=50))
+    fig_tip.show()
 
 def get_noise_robustness_axes():
     # Create Figure and GridSpec
@@ -148,13 +254,19 @@ def get_noise_robustness_axes():
     axes = np.array([ax1, ax2, ax3, ax4, ax5, ax6])
     
     return fig, axes
-
+    
 def plot_explicit_heatmap(
     X, Y, Z,
     cmap="coolwarm",
     xlabel="X", ylabel="Y", zlabel="Z",
     decimals=1,
     subplots=None,
+    fontsize=None,
+    invert_yaxis=True,
+    xticks_size=None,
+    yticks_size=None,
+    xticks_skip=1,
+    yticks_skip=1,
     **kwargs
 ):
     """
@@ -184,27 +296,40 @@ def plot_explicit_heatmap(
                 plt.Rectangle((i, j), 1, 1, facecolor=color, edgecolor="none")
             )
 
-    # Set axis ticks
-    ax.set_xticks(np.arange(len(X)) + 0.5)
-    ax.set_xticklabels([f"{val:.{decimals}f}" for val in X])
+    # Tick skipping
+    X_indices = np.arange(len(X))
+    Y_indices = np.arange(len(Y))
+    X_ticks = X_indices[::xticks_skip]
+    Y_ticks = Y_indices[::yticks_skip]
 
-    ax.set_yticks(np.arange(len(Y)) + 0.5)
-    ax.set_yticklabels([f"{val:.{decimals}f}" for val in Y])
+    # Set axis ticks
+    ax.set_xticks(X_ticks + 0.5)
+    ax.set_xticklabels(
+        [f"{X[i]:.{decimals}f}" for i in X_ticks],
+        fontsize=xticks_size
+    )
+
+    ax.set_yticks(Y_ticks + 0.5)
+    ax.set_yticklabels(
+        [f"{Y[i]:.{decimals}f}" for i in Y_ticks],
+        fontsize=yticks_size
+    )
 
     # Axis labels
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel, fontdict={"fontsize": fontsize})
+    ax.set_ylabel(ylabel, fontdict={"fontsize": fontsize})
 
     # Axis limits and style
     ax.set_xlim(0, len(X))
     ax.set_ylim(0, len(Y))
     ax.set_aspect("equal")
-    ax.invert_yaxis()
+    if invert_yaxis:
+        ax.invert_yaxis()
 
     # Colorbar
     sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
     cbar = fig.colorbar(sm, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_label(zlabel)
+    cbar.set_label(zlabel, fontdict={"fontsize": fontsize})
 
     return fig, ax
 
@@ -220,7 +345,18 @@ def get_atomic_radius(element):
     """Get atomic radius. Returns default value if not found in dictionary"""
     return ATOMIC_RADII.get(element.capitalize(), 1.0)
 
-def plot_pdb_z_projection(traj, r=1.0, subplots=None, print_progress=True, edit_plot_range=False, set_title=True, unit="A", fontsize=14):
+def plot_pdb_z_projection(
+    traj, 
+    image=None,
+    r=1.0, 
+    subplots=None, 
+    edit_plot_range=False, 
+    unit="nm", 
+    fontsize=14,
+    is_tqdm=True,
+    title=None,
+    **kwargs,
+    ):
     """
     Plot the PDB structure as seen from the z-axis.
     Parameters:
@@ -231,6 +367,14 @@ def plot_pdb_z_projection(traj, r=1.0, subplots=None, print_progress=True, edit_
     atoms = list(traj.topology.atoms)
     xyz = traj.xyz[0]
 
+    # Move
+    if image is not None:
+        center = np.asarray(center_of_mass(image.reshape(image.shape[-2:])))
+        z_height = (np.mean(xyz, axis=0) - np.min(xyz, axis=0))[2]
+        new_com = np.concatenate([center.ravel(), z_height.ravel()], axis=0)
+        traj_com = np.mean(xyz, axis=0)
+        xyz = xyz - traj_com[None,:] + new_com[None,:]
+        
     # Decompose coordinates
     x = xyz[:, 0]
     y = xyz[:, 1]
@@ -270,15 +414,7 @@ def plot_pdb_z_projection(traj, r=1.0, subplots=None, print_progress=True, edit_
         show_plot = False  # Control display externally
     
     # Plot atoms as circles
-    for i, (xi, yi, ri, ci) in enumerate(zip(x, y, radii, colors)):
-        if print_progress:
-            total_length = 50
-            percent = int((i+1) / len(x) * 1000) / 10
-            bar = "#" * int((i+1) / len(x) * total_length)
-            rest = "-" * (total_length - len(bar))
-            end = "" if i < len(x) - 1 else "\n"
-            print(f"\r{bar}{rest} [{percent}%]", end=end)
-            
+    for i, (xi, yi, ri, ci) in tqdm(enumerate(zip(x, y, radii, colors)), disable=not is_tqdm, total=len(x), desc="Plotting coordinates..."):
         circle = Circle((xi, yi), radius=ri, facecolor=ci, alpha=0.9, edgecolor='black', linewidth=0.3)
         # inner highlight (optional)
         # inner = Circle((xi - 0.2*ri, yi + 0.2*ri), radius=0.2*ri, color='white', alpha=0.4, zorder=2)
@@ -291,9 +427,9 @@ def plot_pdb_z_projection(traj, r=1.0, subplots=None, print_progress=True, edit_
     elif unit == "nm" or unit == "nanometer":
         ax.set_xlabel("X [nm]", fontsize=fontsize)
         ax.set_ylabel("Y [nm]", fontsize=fontsize)
-        
-    if set_title:
-        ax.set_title("Z-axis Projection of PDB (colored by height)", fontsize=1.2*fontsize)
+    
+    if title is not None:
+        ax.set_title(title, fontsize=1.2*fontsize)
     ax.set_aspect("equal")
     
     if edit_plot_range:
@@ -306,399 +442,27 @@ def plot_pdb_z_projection(traj, r=1.0, subplots=None, print_progress=True, edit_
 
     return fig, ax
 
-def apply_inverse_rotation(r1, r2):
-    # r2_inv: (B1, 3, 3)
-    r2_inv = np.transpose(r2, (0, 2, 1))
-    # r1: (B1, B2, 3, 3), r2_inv: (B1, 3, 3)
-    # Apply batch-wise using einsum
-    return np.einsum('bijk,bkl->bijl', r1, r2_inv)
-
-def distribute_rots_in_grids(rots, best_rot, correlations, lat_grid=90, lon_grid=45, **kwargs):
-    # Distribute in grids
-    indices = rotation_matrix_to_latlon_index(rots, lat_grid, lon_grid)
-    best_index = rotation_matrix_to_latlon_index(best_rot, lat_grid, lon_grid)
-    corr_values = compute_grid_averages(indices, correlations, lat_grid, lon_grid)
-    return corr_values, best_index
-
-def rotation_matrix_to_latlon_index(rotations, num_lat_bins, num_lon_bins):
-    """
-    Map (B, 3, 3) rotation matrices to (B, 2) integer indices representing lat-lon grid bins.
-
-    Args:
-        rotations (array-like): shape (B, 3, 3) or (3, 3); SO(3) rotation matrices.
-        num_lat_bins (int)   : number of latitude bins  (-90° … +90°)
-        num_lon_bins (int)   : number of longitude bins (  0° … 360°)
-
-    Returns:
-        ndarray[int]: shape (B, 2) with (lat_index, lon_index) per rotation.
-    """
-    # 1. Ensure input shape is (B,3,3)
-    rotations = np.asarray(rotations, dtype=np.float64)
-    if rotations.ndim == 2:                      # Convert single input to batch
-        rotations = rotations[None, ...]
-    if rotations.shape[-2:] != (3, 3):
-        raise ValueError("rotations must have shape (B,3,3) or (3,3)")
-    
-    # 2. Rotate the x-axis vector
-    x_axis = np.array([1.0, 0.0, 0.0], dtype=np.float64)
-    rotated_xyz = rotations @ x_axis            # (B,3)
-    
-    # 3. Convert coordinates → latitude/longitude (in radians)
-    x, y, z = rotated_xyz.T
-    lat_rad = np.arcsin(np.clip(z, -1.0, 1.0))       # [-π/2, +π/2]
-    lon_rad = np.mod(np.arctan2(y, x) + np.pi, 2.0 * np.pi)  # [0, 2π)
-    
-    # 4. Normalize radians to [0,1)
-    lat_frac = (lat_rad + np.pi / 2.0) / np.pi       # -90°→0, +90°→1
-    lon_frac = lon_rad / (2.0 * np.pi)               #   0°→0, 360°→1
-
-    # 5. Convert to integer indices in range 0 – (n-1)
-    lat_idx = np.minimum((lat_frac * num_lat_bins).astype(int), num_lat_bins - 1)
-    lon_idx = np.minimum((lon_frac * num_lon_bins).astype(int), num_lon_bins - 1)
-
-    return np.stack([lat_idx, lon_idx], axis=-1)
-
-def compute_grid_averages(indices, values, lat_grid, lon_grid):
-    """
-    Compute average of values per lat-lon grid cell.
-
-    Args:
-        indices: ndarray of shape (B, 2), integer indices (lat_idx, lon_idx)
-        values: ndarray of shape (B,), values to average
-        lat_grid: int, number of latitude bins
-        lon_grid: int, number of longitude bins
-
-    Returns:
-        grid_values: ndarray of shape (lat_grid, lon_grid), mean of values in each cell (np.nan if empty)
-    """
-    # Initialize sum and count arrays
-    sum_grid = np.zeros((lat_grid, lon_grid), dtype=np.float64)
-    count_grid = np.zeros((lat_grid, lon_grid), dtype=np.int32)
-
-    lat_idx = indices[:, 0]
-    lon_idx = indices[:, 1]
-
-    for i in range(values.shape[0]):
-        lat = lat_idx[i]
-        lon = lon_idx[i]
-        if 0 <= lat < lat_grid and 0 <= lon < lon_grid:
-            sum_grid[lat, lon] += values[i]
-            count_grid[lat, lon] += 1
-
-    # Avoid division by zero; assign np.nan where count is 0
-    with np.errstate(invalid='ignore', divide='ignore'):
-        grid_values = sum_grid / count_grid
-        grid_values[count_grid == 0] = np.nan
-
-    return grid_values
-
-def get_rigid_body_fitting_axes(figsize=3.0):
-    fig = plt.figure(figsize=(4*figsize, 2*figsize))
-
-    gs = gridspec.GridSpec(2, 4, figure=fig)
-    axes = np.array([[None]*4 for _ in range(2)])
-
-    for i in range(2):
-        for j in range(4):
-            if (i, j) in [(0,2), (1,2)]:
-                # Mollweide 投影の Axes
-                ax = fig.add_subplot(gs[i, j], projection=ccrs.Mollweide(central_longitude=0))
-                ax.set_global()
-            else:
-                # 通常の Axes
-                ax = fig.add_subplot(gs[i, j])
-            axes[i][j] = ax
-    return fig, axes
-
-def estimate_reasonable_range(arr, min_r=0.25, max_r=0.75, r=2.0):
-    """
-    Estimate and return a "reasonable range" from an arbitrary-shaped array arr.
-    Procedure:
-      1) Compute quantile values qmin, qmax at min_r, max_r
-      2) Compute empirical probability p that data lies within [qmin, qmax]
-      3) Solve for scale such that ∫_{scale*(min_r-0.5)}^{scale*(max_r-0.5)} φ(z)dz = p 
-         where φ is the standard normal pdf.
-         (When min_r=0.25, max_r=0.75 this interval is symmetric: ±0.25*scale)
-         ⇒ Let a = 0.25*scale, then 2*Φ(a) - 1 = p,
-            so a = Φ^{-1}((1+p)/2),
-            thus scale = 4 * Φ^{-1}((1+p)/2)
-      4) Assume I = qmax - qmin corresponds to ±aσ in normal distribution, 
-         so σ̂ = I / (2a) = 2I/scale
-      5) Using mean, return (mean - 2σ̂, mean + 2σ̂)
-
-    Returns:
-      (lower, upper, details)
-      details is a dictionary of intermediate values (qmin, qmax, p, scale, sigma, mean)
-    """
-    x = np.asarray(arr).ravel()
-    x = x[np.isfinite(x)]
-    if x.size == 0:
-        raise ValueError("No valid numbers in arr (requires non-NaN/finite values)")
-    if not (0 < min_r < max_r < 1):
-        raise ValueError("Require 0 < min_r < max_r < 1")
-
-    # 1) Quantiles
-    qmin, qmax = np.quantile(x, [min_r, max_r])
-
-    # 2) Empirical probability (including endpoints)
-    p = np.mean((x >= qmin) & (x <= qmax))
-    # Numerical stabilization
-    eps = 1e-12
-    p = float(np.clip(p, eps, 1 - eps))
-
-    # 3) Solve for scale
-    a = _norm_ppf((1.0 + p) / 2.0)          # a = 0.25 * scale
-    scale = 4.0 * a
-
-    # 4) Estimate σ̂ (I = qmax-qmin corresponds to ±aσ)
-    I = qmax - qmin
-    if a <= 0 or I < 0:
-        raise RuntimeError("Invalid scale or IQR (check data distribution)")
-    sigma = I / (2.0 * a)   # Equivalent: sigma = 2*I/scale
-
-    # 5) Return ±rσ range
-    mean_value = float(np.mean(x))
-    lower = mean_value - r * sigma
-    upper = mean_value + r * sigma
-
-    details = {
-        "qmin": float(qmin),
-        "qmax": float(qmax),
-        "p_between": p,
-        "scale": float(scale),
-        "sigma": float(sigma),
-        "mean": mean_value,
-        "min_r": float(min_r),
-        "max_r": float(max_r),
-    }
-    return lower, upper, details
-
-def _norm_ppf(p: float) -> float:
-    """
-    Inverse CDF (ppf) of the standard normal distribution for one-sided probability p.
-    Uses Peter J. Acklam’s well-known approximation (no external dependencies).
-    Error is sufficiently small for practical use.
-    """
-    if p <= 0.0 or p >= 1.0:
-        if p == 0.0:
-            return -np.inf
-        if p == 1.0:
-            return np.inf
-        raise ValueError("p must be in (0,1)")
-
-    # Coefficients (Acklam, 2003)
-    a = [ -3.969683028665376e+01,  2.209460984245205e+02,
-          -2.759285104469687e+02,  1.383577518672690e+02,
-          -3.066479806614716e+01,  2.506628277459239e+00 ]
-    b = [ -5.447609879822406e+01,  1.615858368580409e+02,
-          -1.556989798598866e+02,  6.680131188771972e+01,
-          -1.328068155288572e+01 ]
-    c = [ -7.784894002430293e-03, -3.223964580411365e-01,
-          -2.400758277161838e+00, -2.549732539343734e+00,
-           4.374664141464968e+00,  2.938163982698783e+00 ]
-    d = [ 7.784695709041462e-03,  3.224671290700398e-01,
-          2.445134137142996e+00,  3.754408661907416e+00 ]
-
-    # Breakpoints
-    plow  = 0.02425
-    phigh = 1 - plow
-
-    if p < plow:
-        q = np.sqrt(-2*np.log(p))
-        return (((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) / \
-               ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1)
-    elif phigh < p:
-        q = np.sqrt(-2*np.log(1 - p))
-        return -(((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) / \
-                 ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1)
-    else:
-        q = p - 0.5
-        r = q*q
-        return (((((a[0]*r + a[1])*r + a[2])*r + a[3])*r + a[4])*r + a[5]) * q / \
-               (((((b[0]*r + b[1])*r + b[2])*r + b[3])*r + b[4])*r + 1)
-
-def plot_mollweide_heatmap(
-    data, 
-    lon=None, 
-    lat=None,
-    label="Sample Data",
-    title="Mollweide Heatmap (Grid-based)",
-    subplots=None, 
-    vmin=None, 
-    vmax=None,
-    # Show geographic grid (longitude/latitude lines)
-    show_geo_grid=True,
-    grid_lon_step=60,
-    grid_lat_step=30,
-    grid_kwargs=None,
-    # Cell boundary grid (grid lines of pcolormesh)
-    show_cell_grid=False,
-    cell_edgecolor="k",
-    cell_linewidth=0.2,
-    cell_alpha=0.8,
-    cmap="coolwarm",
-    fontsize=14,
-):
-    """
-    Draw a heatmap with Mollweide projection (with options for geographic lines/cell boundaries)
-
-    Args:
-        data (ndarray): shape (lat_grid, lon_grid)
-        lon (1D ndarray or None): Longitude (degrees). If None, generate automatically with equal spacing [-180, 180]
-        lat (1D ndarray or None): Latitude (degrees). If None, generate automatically with equal spacing [-90, 90]
-    """
-    lat_grid, lon_grid = data.shape
-
-    if lon is None:
-        lon = np.linspace(-180, 180, lon_grid)
-    if lat is None:
-        lat = np.linspace(-90, 90, lat_grid)
-    lon2d, lat2d = np.meshgrid(lon, lat)
-
-    # If no existing subplots, create Axes with Cartopy projection
-    if subplots is None:
-        fig = plt.figure(figsize=(10, 6))
-        ax = plt.axes(projection=ccrs.Mollweide(central_longitude=0.0))
-    else:
-        fig, ax = subplots
-        # Ensure existing Axes is Mollweide
-        assert isinstance(getattr(ax, "projection", None), ccrs.Mollweide)
-
-    ax.set_global()
-
-    # pcolormesh: In Cartopy, data is transferred from PlateCarree (lat/lon) to Mollweide
-    pc_kwargs = dict(shading='auto', cmap=cmap, vmin=vmin, vmax=vmax,
-                     transform=ccrs.PlateCarree())
-    if show_cell_grid:
-        pc_kwargs.update(edgecolors=cell_edgecolor, linewidth=cell_linewidth)
-        pc_kwargs.update(alpha=cell_alpha)
-
-    cs = ax.pcolormesh(lon2d, lat2d, data, **pc_kwargs)
-
-    # Geographic grid lines (draw only, labels off)
-    if show_geo_grid:
-        gk = dict(color="k", linewidth=0.5, alpha=0.6)
-        if grid_kwargs:
-            gk.update(grid_kwargs)
-
-        # Specify equivalent of dashes=[2,2] using linestyle (Cartopy/Matplotlib style)
-        if 'dashes' in gk:
-            dash = gk.pop('dashes')
-            # Convert to Matplotlib format (offset, on_off_seq)
-            gk['linestyle'] = (0, tuple(dash))
-
-        gl = ax.gridlines(draw_labels=False, **gk)
-
-        # Specify longitude/latitude positions with step size
-        # (Note) xlocs/ylocs expect degrees. Ranges: [-180, 180], [-90, 90]
-        import matplotlib.ticker as mticker
-        meridians = np.arange(-180, 181, grid_lon_step)
-        parallels = np.arange(-90, 91, grid_lat_step)
-        gl.xlocator = mticker.FixedLocator(meridians)
-        gl.ylocator = mticker.FixedLocator(parallels)
-
-    if title is not None:
-        ax.set_title(title, fontdict={"fontsize": fontsize})
-
-    # Add colorbar at Figure level
-    cbar = plt.colorbar(cs, ax=ax, orientation='horizontal', pad=0.05)
-    cbar.set_label(label)
-
-    if subplots is None:
-        plt.tight_layout()
-        plt.show()
-
-    return fig, ax
-
-def plot_mollweide_scatter(
-    indices,
-    lat_grid,
-    lon_grid,
-    lon=None,
-    lat=None,
-    label=None,
-    subplots=None,
-    marker='o',
-    s=10,
-    color='black',
-    alpha=0.7,
-    fontsize=14,
-    **kwargs,
-):
-    """
-    Draw a scatter plot with Mollweide projection (without map decorations)
-
-    Args:
-        indices (ndarray): shape (B, 2), each row is (lat_idx, lon_idx)
-        lat_grid (int): Number of latitude bins
-        lon_grid (int): Number of longitude bins
-        lon (ndarray or None): Longitude (degrees). If None, evenly spaced [-180, 180]
-        lat (ndarray or None): Latitude (degrees). If None, evenly spaced [-90, 90]
-        label (str or None): Legend label
-        subplots (tuple or None): (fig, ax). If not specified, create new
-        marker, s, color, alpha: Scatter plot style
-    Returns:
-        (fig, ax)
-    """
-    # Generate lon/lat axes
-    if lon is None:
-        lon = np.linspace(-180, 180, lon_grid)
-    if lat is None:
-        lat = np.linspace(-90, 90, lat_grid)
-
-    # Normalize indices
-    indices = np.asarray(indices)
-    if indices.ndim == 1:
-        indices = indices[None, :]
-    assert indices.shape[1] == 2, "indices should have shape (B, 2)"
-    lat_idx = indices[:, 0].astype(int)
-    lon_idx = indices[:, 1].astype(int)
-
-    # Index → latitude/longitude (assume center positions)
-    lat_vals = lat[lat_idx]
-    lon_vals = lon[lon_idx]
-    
-    # Prepare Axes (Mollweide projection)
-    if subplots is None:
-        fig = plt.figure(figsize=(10, 6))
-        ax = plt.axes(projection=ccrs.Mollweide(central_longitude=0.0))
-    else:
-        fig, ax = subplots
-        # Ensure existing Axes is Mollweide
-        assert isinstance(getattr(ax, "projection", None), ccrs.Mollweide)
-
-    ax.set_global()
-
-    # Scatter plot (lat/lon → Mollweide via transform specification)
-    sc = ax.scatter(
-        lon_vals,
-        lat_vals,
-        s=s,
-        c=color,
-        marker=marker,
-        alpha=alpha,
-        transform=ccrs.PlateCarree(),
-        label=label,
-        **kwargs,
-    )
-
-    if label is not None:
-        ax.legend(loc='upper right', fontsize=fontsize)
-
-    return fig, ax
-
 def plot_hist(
     data,
+    label=None,
     pad=0.1,
+    bins=40,
     subplots=None,
     xlabel=None,
     ylabel=None,
     title=None,
     vmin=None,
     vmax=None,
+    color="skyblue",
+    ls="-",
+    lw=1.5,
     decimals=2,   # Added: number of decimal places for x-axis labels
     fontsize=14,
     plot_normal=False,
+    stepfilled=False,
+    density=True,
+    add_mean_vline=False,
+    add_text=False,
     **kwargs
 ):
     if subplots is None:
@@ -710,26 +474,52 @@ def plot_hist(
     valid_data = data[~invalid_mask]
     if vmin is None and vmax is None:
         data_range = (np.min(valid_data), np.max(valid_data))
+        x_padding = pad * (data_range[1] - data_range[0])
     else:
         data_range = (vmin, vmax)
+        x_padding = 0.0
     
-    x_padding = pad * (data_range[1] - data_range[0])
-    count, bins, _ = ax.hist(
-        valid_data.ravel(),
-        range=(data_range[0]-x_padding, data_range[1]+x_padding),
-        color="skyblue",
-        **kwargs
-    )
-    y_padding = pad * np.max(count)
+    if stepfilled:
+        count, bins, _ = ax.hist(
+            valid_data.ravel(),
+            range=(data_range[0]-x_padding, data_range[1]+x_padding),
+            bins=bins, 
+            histtype='stepfilled', 
+            edgecolor=color, 
+            facecolor='none',
+            label=label,
+            density=density,
+            linestyle=ls,
+            linewidth=lw,
+            **kwargs
+        )
+    else:
+        count, bins, _ = ax.hist(
+            valid_data.ravel(),
+            range=(data_range[0]-x_padding, data_range[1]+x_padding),
+            bins=bins, 
+            color=color,
+            density=density,
+            label=label,
+            **kwargs
+        )
+    
+    if density:
+        ymax = np.max(count) / np.sum(count)
+    else:
+        ymax = np.max(count)
+        
+    y_padding = pad * ymax
     
     # Show mean value
-    ax.vlines(
-        np.mean(valid_data),
-        ymin=0,
-        ymax=np.max(count)+y_padding,
-        colors="salmon",
-        linestyles="--"
-    )
+    if add_mean_vline:
+       ax.vlines(
+            np.mean(valid_data),
+            ymin=0,
+            ymax=ymax+y_padding,
+            colors="salmon",
+            linestyles="--"
+        )
     
     # Show normal distribution
     if plot_normal:
@@ -759,14 +549,287 @@ def plot_hist(
     ax.xaxis.set_major_formatter(ticker.FormatStrFormatter("%.2f"))
     
     # ★ Display statistics in the upper-right corner of the plot
-    mean_val = np.mean(valid_data)
-    max_val = np.max(valid_data)
-    ax.text(
-        0.98, 0.95,
-        f"Max: {max_val:.{decimals}f}\nMean: {mean_val:.{decimals}f}",
-        transform=ax.transAxes,
-        ha="right", va="top",
-        fontsize=fontsize,
-        bbox=dict(facecolor="white", alpha=0.6, edgecolor="none")
-    )
+    if add_text:
+        mean_val = np.mean(valid_data)
+        max_val = np.max(valid_data)
+        ax.text(
+            0.98, 0.95,
+            f"Max: {max_val:.{decimals}f}\nMean: {mean_val:.{decimals}f}",
+            transform=ax.transAxes,
+            ha="right", va="top",
+            fontsize=fontsize,
+            bbox=dict(facecolor="white", alpha=0.6, edgecolor="none")
+        )
+        
     return fig, ax
+
+def plot_inter_domain_distance(
+    traj, 
+    domain_pairs,
+    xtype=0,
+    ytype=1,
+    ztype=2,
+    xlabel=None,
+    ylabel=None,
+    zlabel=None,
+    subplots=None,
+    domain_pair_labels=None,
+    cmap="viridis",
+    fontsize=14,
+    xlim=None,
+    ylim=None,
+    title=None,
+    ):
+    assert all(isinstance(axistype, (int, np.ndarray)) for axistype in [xtype, ytype, ztype])
+    if domain_pair_labels is not None:
+        assert len(domain_pair_labels) == len(domain_pairs)
+    
+    # Compute domain distance
+    domain_distance = np.zeros((len(traj), len(domain_pairs)))
+    for i, (d1, d2) in enumerate(domain_pairs):
+        domain_distance[:,i] = compute_domain_distance(traj, d1, d2).ravel()
+    
+    # Distribute in axis
+    if isinstance(xtype, int):
+        x = domain_distance[:,xtype]
+        if xlabel is not None:
+            xlabel = xlabel
+        elif domain_pair_labels is not None:
+            xlabel = domain_pair_labels[xtype]
+        else:
+            xlabel = None
+    elif isinstance(xtype, np.ndarray):
+        assert len(xtype) == len(domain_distance), f"len(xtype): {len(xtype)} != len(domain_distance): {len(domain_distance)}"
+        x = xtype
+        if xlabel is not None:
+            xlabel = xlabel
+        else:
+            xlabel = None
+    else:
+        raise NotImplementedError
+    
+    if isinstance(ytype, int):
+        y = domain_distance[:,ytype]
+        if ylabel is not None:
+            ylabel = ylabel
+        elif domain_pair_labels is not None:
+            ylabel = domain_pair_labels[ytype]
+        else:
+            ylabel = None
+    elif isinstance(ytype, np.ndarray):
+        assert len(ytype) == len(domain_distance), f"len(ytype): {len(ytype)} != len(domain_distance): {len(domain_distance)}"
+        y = ytype
+        if ylabel is not None:
+            ylabel = ylabel
+        else:
+            ylabel = None
+    else:
+        raise NotImplementedError
+    
+    if isinstance(ztype, int):
+        z = domain_distance[:,ztype]
+        if zlabel is not None:
+            zlabel = zlabel
+        elif domain_pair_labels is not None:
+            zlabel = domain_pair_labels[ztype]
+        else:
+            zlabel = None
+    elif isinstance(ztype, np.ndarray):
+        assert len(ztype) == len(domain_distance), f"len(ztype): {len(ztype)} != len(domain_distance): {len(domain_distance)}"
+        z = ztype
+        if zlabel is not None:
+            zlabel = zlabel
+        else:
+            zlabel = None
+    else:
+        raise NotImplementedError
+    
+    # Plot
+    if subplots is None:
+        fig, ax = plt.subplots(figsize=(5, 4))
+    else:
+        fig, ax = subplots
+    
+    if z is None:
+        sc = ax.scatter(x, y)
+    else:
+        sc = ax.scatter(x, y, c=z, cmap=cmap)
+        cbar = plt.colorbar(sc, ax=ax)
+        if zlabel is not None:
+            cbar.set_label(zlabel, fontdict={"fontsize": fontsize})
+    
+    # Clean the format
+    ax.set_xlabel(xlabel, fontdict={"fontsize": fontsize})
+    ax.set_ylabel(ylabel, fontdict={"fontsize": fontsize})
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    if title is not None:
+        ax.set_title(title, fontdict={"fontsize": fontsize})
+    plt.tight_layout()
+    return fig, ax
+
+def plot_evaluation_results(
+    traj,
+    acceptable_mask,
+    molprobity_results,
+    bond_summeries,
+    name, 
+    subplots=None, 
+    only_acceptable=True,
+    axsize=(4, 3),
+    ):
+    domain_pairs = get_domain_pairs(name)
+    domain_pair_names = get_domain_pair_names(name)
+    domain_pair_labels = [f"{n1} - {n2}" for n1, n2 in domain_pair_names]
+    
+    if subplots is None:
+        column = max(len(molprobity_results), len(bond_summeries))
+        fig, axes = plt.subplots(3, column, figsize=(column*axsize[0], 3*axsize[1]))
+    else:
+        fig, axes = subplots
+    
+    _ = plot_inter_domain_distance(
+        traj, 
+        domain_pairs, 
+        domain_pair_labels=domain_pair_labels,
+        subplots=(fig, axes[0,0])
+        )
+
+    if only_acceptable:
+        traj_acc = traj[acceptable_mask]
+    else:
+        traj_acc = traj
+        
+    _ = plot_inter_domain_distance(
+        traj_acc, 
+        domain_pairs, 
+        domain_pair_labels=domain_pair_labels,
+        subplots=(fig, axes[0,1])
+        )
+
+    for i, (name, score) in enumerate(molprobity_results.items()):
+        _ = plot_inter_domain_distance(
+            traj, 
+            domain_pairs, 
+            domain_pair_labels=domain_pair_labels,
+            xtype=0,
+            ytype=1,
+            ztype=score,
+            xlabel=None,
+            ylabel=None,
+            zlabel=name,
+            subplots=(fig, axes[1,i])
+            )
+    
+    for i, (name, ratios) in enumerate(bond_summeries.items()):
+        _ = plot_inter_domain_distance(
+            traj, 
+            domain_pairs, 
+            domain_pair_labels=domain_pair_labels,
+            xtype=0,
+            ytype=1,
+            ztype=ratios,
+            xlabel=None,
+            ylabel=None,
+            zlabel=name,
+            subplots=(fig, axes[2,i])
+            )
+
+    plt.tight_layout()
+    
+    return fig, axes
+
+def plot_bland_altman(
+    data1,
+    data2,
+    data1_label=None,
+    data2_label=None,
+    color=None,
+    color_label=None,
+    cmap="viridis",
+    data_unit="",
+    subplots=None,
+    xlim=None,
+    ylim=None,
+    xlabel=None,
+    ylabel=None,
+    title=None,
+    add_zero_yline=True,
+    fontsize=14,
+    tick_fontsize=None,
+    bbox_to_anchor=(0.5, -0.1),
+    **kwargs,
+):
+    if subplots is None:
+        fig, ax = plt.subplots(figsize=(6, 4))
+    else:
+        fig, ax = subplots
+    
+    if tick_fontsize is None:
+        tick_fontsize = 0.6 * fontsize
+    # Data for Bland–Altman plot
+    mean_values = (data1 + data2) / 2
+    diff_values = data2 - data1
+
+    mean_diff = np.mean(diff_values)
+    std_diff = np.std(diff_values)
+
+    # Scatter plot
+    if color is not None:
+        # Determine whether color is an array or a single value
+        if np.ndim(color) == 1:
+            assert len(color) == len(mean_values), \
+                "color must have the same length as data"
+            sc = ax.scatter(
+                mean_values, diff_values,
+                c=color, cmap=cmap, alpha=0.7, edgecolor='k', 
+            )
+            # Add colorbar (works even when using subplots)
+            cbar = fig.colorbar(sc, ax=ax)
+            cbar.set_label(color_label, fontsize=0.9*fontsize)
+            cbar.ax.tick_params(labelsize=tick_fontsize)
+        else:
+            # When a single color is specified
+            ax.scatter(mean_values, diff_values, color=color, alpha=0.7, edgecolor='k')
+    else:
+        ax.scatter(mean_values, diff_values, alpha=0.7, edgecolor='k')
+
+    # Mean line and ±1.96 SD lines (95% limits of agreement)
+    ax.axhline(mean_diff, color='salmon', linestyle='--', label=f'Mean = {mean_diff:.3f}')
+    ax.axhline(mean_diff + 1.96 * std_diff, color='slateblue', linestyle=':', label='±1.96 SD')
+    ax.axhline(mean_diff - 1.96 * std_diff, color='slateblue', linestyle=':')
+    
+    if add_zero_yline:
+        ax.axhline(0.0, color='black', linestyle='--')
+        
+    # Axis labels and title
+    if xlabel is None and (data1_label is not None and data2_label is not None):
+        xlabel = f"({data2_label.strip()} + {data1_label.strip()}) / 2 {data_unit}".strip()
+    ax.set_xlabel(xlabel, fontdict={"fontsize": fontsize})
+    ax.tick_params(axis='x', labelsize=tick_fontsize)
+    
+    if ylabel is None and (data1_label is not None and data2_label is not None):
+        ylabel = f"{data2_label.strip()} - {data1_label.strip()} {data_unit}".strip()
+    ax.set_ylabel(ylabel, fontdict={"fontsize": fontsize})
+    ax.tick_params(axis='y', labelsize=tick_fontsize)
+    
+    if title is not None:
+        ax.set_title(title, fontdict={"fontsize": 1.2*fontsize})
+
+    # Adjust axis ranges if specified
+    if xlim is not None:
+        ax.set_xlim(xlim)
+        
+    if ylim is not None:
+        # ax.set_ylim(mean_diff - 3*std_diff, mean_diff + 3*std_diff)
+        ax.set_ylim(ylim)
+
+    # Add legend
+    ax.legend(loc='upper center', bbox_to_anchor=bbox_to_anchor, ncol=2, fontsize=0.8*fontsize)
+    
+    return fig, ax
+
+
+

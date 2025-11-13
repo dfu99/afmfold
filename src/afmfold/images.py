@@ -77,51 +77,47 @@ def generate_landscape(coords, xedges, yedges):
     if isinstance(yedges, np.ndarray):
         yedges = torch.from_numpy(yedges)
     if xedges.ndim == 1:
-        xedges = torch.tile(xedges[None,:], (len(coords), 1))
+        xedges = xedges.unsqueeze(0).repeat(len(coords), 1)
     if yedges.ndim == 1:
-        yedges = torch.tile(yedges[None,:], (len(coords), 1))
+        yedges = yedges.unsqueeze(0).repeat(len(coords), 1)
     
-    # Expand input shape
-    *outer_shape, B, N, _ = coords.shape  # outer_shape ≔ additional batch dimensions
+    *outer_shape, B, N, _ = coords.shape
     outer_prod = int(torch.tensor(outer_shape).prod()) if outer_shape else 1
-    
     W = xedges.shape[-1] - 1
     H = yedges.shape[-1] - 1
     device = coords.device
 
-    # Reshape to [T, N, 3] (T = outer_prod * B)
-    coords = coords.reshape(outer_prod * B, N, 3)  # [T, N, 3]
+    coords = coords.reshape(outer_prod * B, N, 3)
+    xedges = xedges.reshape(outer_prod * B, W + 1)
+    yedges = yedges.reshape(outer_prod * B, H + 1)
 
-    # Broadcast xedges, yedges to T rows
-    xedges = xedges.unsqueeze(0).expand(outer_prod, -1, -1).reshape(outer_prod * B, W + 1)  # [T, W+1]
-    yedges = yedges.unsqueeze(0).expand(outer_prod, -1, -1).reshape(outer_prod * B, H + 1)  # [T, H+1]
+    # Grid centers
+    x_centers = (xedges[:, :-1] + xedges[:, 1:]) / 2
+    y_centers = (yedges[:, :-1] + yedges[:, 1:]) / 2
+    
+    x, y, z = coords.unbind(-1)
 
-    # Grid center coordinates
-    x_centers = (xedges[:, :-1] + xedges[:, 1:]) / 2  # [T, W]
-    y_centers = (yedges[:, :-1] + yedges[:, 1:]) / 2  # [T, H]
+    # Inclusion fix: include right/top edge
+    x_bin = (x.unsqueeze(-1) >= xedges[:, :-1].unsqueeze(1)) & (x.unsqueeze(-1) <= xedges[:, 1:].unsqueeze(1))
+    y_bin = (y.unsqueeze(-1) >= yedges[:, :-1].unsqueeze(1)) & (y.unsqueeze(-1) <= yedges[:, 1:].unsqueeze(1))
 
-    # Assign x, y to grid cells
-    x, y, z = coords.unbind(-1)  # each [T, N]
+    valid = x_bin.any(-1) & y_bin.any(-1)
+    x_idx = x_bin.float().argmax(-1)
+    y_idx = y_bin.float().argmax(-1)
 
-    x_bin = (x.unsqueeze(-1) >= xedges[:, :-1].unsqueeze(1)) & (x.unsqueeze(-1) <  xedges[:, 1:].unsqueeze(1))  # [T, N, W]
-    y_bin = (y.unsqueeze(-1) >= yedges[:, :-1].unsqueeze(1)) & (y.unsqueeze(-1) <  yedges[:, 1:].unsqueeze(1))  # [T, N, H]
+    grid_idx = y_idx * W + x_idx
+    flat_idx = torch.arange(outer_prod * B, device=device).unsqueeze(1) * (H * W) + grid_idx
+    flat_idx = flat_idx[valid].reshape(-1)
+    z_flat = z[valid].reshape(-1)
 
-    valid = x_bin.any(-1) & y_bin.any(-1)  # [T, N]
-
-    x_idx = x_bin.float().argmax(-1)  # [T, N]
-    y_idx = y_bin.float().argmax(-1)  # [T, N]
-    grid_idx = y_idx * W + x_idx  # [T, N]
-
-    flat_idx = torch.arange(outer_prod * B, device=device).unsqueeze(1) * (H * W) + grid_idx                       # [T, N]
-    flat_idx = flat_idx[valid].reshape(-1)  # Extract only valid ones
-
-    z_flat = z[valid].reshape(-1)  # [N_valid]
-
-    # Compute max z in each grid cell
-    max_z = torch.full((outer_prod * B * H * W,), 0.0, device=device, dtype=z_flat.dtype)
+    max_z = torch.full((outer_prod * B * H * W,), float('-inf'), dtype=coords.dtype, device=device)
     max_z = max_z.scatter_reduce(0, flat_idx, z_flat, reduce='amax', include_self=True)
-    landscape = max_z.view(outer_prod, B, H, W)  # [T, H, W]
-    return landscape
+    landscape = max_z.view(outer_prod, B, H, W)
+
+    # Replace -inf (empty cells) with 0
+    landscape = torch.where(torch.isinf(landscape), torch.zeros_like(landscape), landscape)
+    
+    return landscape, x_centers, y_centers
 
 def fixed_padding(inputs, kernel_size, dilation=1, padding_type="idilation"):
     if padding_type == "idilation":
@@ -206,7 +202,7 @@ def idilation(image, tip):
     x = x.view(B, H, W)
     return x
 
-def generate_tip_shape(radius, angle, device="cpu"):
+def generate_tip_shape(radius, angle, dim=None, device="cpu"):
     """
     Generate a shape with a hemisphere + outer taper (slope).
 
@@ -218,7 +214,8 @@ def generate_tip_shape(radius, angle, device="cpu"):
         torch.Tensor: height tensor of shape (dim, dim)
     """
     angle_rad = angle / 180 * math.pi
-    dim = int(math.ceil(radius) * 3)
+    if dim is None:
+        dim = int(math.ceil(radius) * 3)
     center = (dim - 1) / 2  # Ensure pixel center is aligned with grid center
     tangent = math.tan(0.5 * math.pi - angle_rad)
 
@@ -299,7 +296,7 @@ def add_noise(real_images, pseudo_images, r=1.0, noise_threshold=0.0, seed=None)
 
 def generate_images(
     traj, resolution_nm, width, height, epochs, dataset_size, 
-    distance=None, batch_size=1, min_z=0.0, noise_nm=0.0,
+    distance=None, batch_size=1, min_z=0.0, noise_nm=0.0, apply_rotation=True,
     max_tip_radius=1.0, min_tip_radius=3.0, max_tip_angle=10.0, min_tip_angle=30.0,
     ref_images=None, is_tqdm=True, match_histgram=False, save_dir=None, device="cuda",
     ):
@@ -328,14 +325,17 @@ def generate_images(
     # Generate images
     output_image_list = []
     output_label_list = []
-    for epoch in tqdm(range(epochs), disable=is_tqdm):
+    for epoch in range(epochs):
         batch_image_list = []
         batch_label_list = []
         for step in tqdm(range(math.ceil(dataset_size / (len(xyz) * batch_size))), disable=not is_tqdm, desc=f"Epoch {epoch+1}/{epochs}"):
-            # Apply rotations
-            rots = sample_uniform_so3(batch_size, device=device)
-            rotated = apply_rotations(xyz, rots)  # [Nframe, Nrot, N, 3]
-            
+            if apply_rotation:
+                # Apply rotations
+                rots = sample_uniform_so3(batch_size, device=device)
+                rotated = apply_rotations(xyz, rots)  # [Nframe, Nrot, N, 3]
+            else:
+                rotated = xyz
+                
             # Rotate labels accordingly
             rotated = rotated.reshape((-1, *rotated.shape[-2:]))  # [Nframe * Nrot, N, 3]
             if ref_labels is not None:
@@ -352,7 +352,7 @@ def generate_images(
             translated = translated + (- min_coord + min_z) * z_unit
             
             # Create pseudo-AFM image
-            pure_image = generate_landscape(translated, xedges, yedges)
+            pure_image, x_centers, y_centers = generate_landscape(translated, xedges, yedges)
             pure_image = pure_image.reshape((-1, height, width))
 
             # Generate pseudo tip

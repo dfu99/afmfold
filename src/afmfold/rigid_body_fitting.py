@@ -206,11 +206,33 @@ def compute_correlation_coeﬃcient(image1, image2):
         cc = cc.detach().cpu().numpy()
     return cc
 
+def threshold_and_mask(images, r_threshold=0.5):
+    B, H, W = images.shape
+    out = np.zeros_like(images)
+    
+    cy, cx = H / 2, W / 2
+    y, x = np.ogrid[:H, :W]
+    dist = np.sqrt((y - cy)**2 + (x - cx)**2)
+    rad_threshold = r_threshold * min(H, W)
+    mask_radius = dist <= rad_threshold  # True inside radius
+    
+    for b in range(B):
+        img = images[b]
+        med = np.median(img)
+        std = np.std(img)
+        thresh = med + 0.5 * std
+        mask_intensity = img >= thresh
+        mask = mask_intensity & mask_radius
+        out[b] = np.where(mask, img, 0)
+    
+    return out
+
 class RigidBodyFitting:
     def __init__(
         self, target_image, traj, steps, 
         resolution_nm=0.98, min_z=None, translation_range=(-5.0, 5.0), 
-        translation_batch=10, rot_batch=32, prove_radius=4.2, prove_angle=20,
+        translation_batch=10, rot_batch=32, 
+        prove_radius_range=None, prove_radius_step=1.0, prove_radius=4.2, prove_angle=20, 
         ref_pdb=None, log_interval=1, dry_run=False, match_histgram=False, device="cpu",
         ):
         # Instantiate inputs
@@ -227,6 +249,8 @@ class RigidBodyFitting:
         self.translation_range = translation_range
         self.translation_batch = translation_batch
         self.rot_batch = rot_batch
+        self.prove_radius_range = prove_radius_range
+        self.prove_radius_step = prove_radius_step
         self.prove_radius = prove_radius
         self.prove_angle = prove_angle
         self.ref_pdb = ref_pdb
@@ -246,12 +270,25 @@ class RigidBodyFitting:
         # Initial settings
         self.num_frames, self.H, self.W = target_image.shape
         assert self.num_frames == len(traj)
+        
+        if self.prove_radius_range is None and self.prove_radius is not None:
+            self.prove_radius_list = [self.prove_radius,]
+        elif self.prove_radius_range is not None and self.prove_radius is None:
+            self.prove_radius_list = [r * self.prove_radius_step for r in range(math.floor(self.prove_radius_range[0]/self.prove_radius_step), math.ceil(self.prove_radius_range[1]/self.prove_radius_step)+1)]
+        else:
+            raise NotImplementedError(f"self.prove_radius_range: {self.prove_radius_range}, self.prove_radius: {self.prove_radius}")
+        
         self.xyz = torch.from_numpy(traj.xyz).to(device)
-        self.center = resolution_nm * torch.cat([torch.tensor(list(center_of_mass(self.target_image[i].detach().cpu().numpy())) + [0.0,]).reshape(-1, 3) for i in range(len(self.target_image))], dim=0).to(device)  # [F, 3]
+        
+        # Compute COM
+        cleaned_target_image = threshold_and_mask(self.target_image.detach().cpu().numpy())
+        yxs = torch.cat([torch.as_tensor(center_of_mass(cleaned_target_image[i])).unsqueeze(0) for i in range(len(cleaned_target_image))], dim=0)  # [F, 3]
+        self.center = torch.cat([yxs[:,1][:,None], yxs[:,0][:,None], torch.zeros((len(cleaned_target_image),1))], dim=-1).to(device)
         self.xedges = - 0.5 * resolution_nm + resolution_nm * torch.arange(self.W + 1, device=device)
         self.xgrid = resolution_nm * torch.arange(self.W, device=device)
         self.yedges = - 0.5 * resolution_nm + resolution_nm * torch.arange(self.H + 1, device=device)
         self.ygrid = resolution_nm * torch.arange(self.H, device=device)
+        
         self.target_minvalue = torch.min(self.target_image)
         self.target_maxvalue = torch.max(self.target_image)
         self.target_medianvalue = torch.median(self.target_image)
@@ -279,7 +316,7 @@ class RigidBodyFitting:
             centered = self.fit_translation(rotated).unsqueeze(1)  # [F, 1, Brot, N, 3]
             delta = self.trans.unsqueeze(1).unsqueeze(1).unsqueeze(0)  # [Btrans, 3] => [1, Btrans, 1, 1, 3]
             translated = (centered + delta).reshape((-1, *self.xyz.shape[-2:]))  # [F*Btrans*Brot, N, 3]
-
+            
             # Adjust z-coordinate
             if self.min_z is not None:
                 # Adjust z-coordinate
@@ -288,30 +325,37 @@ class RigidBodyFitting:
                 translated = translated + (- min_coord + self.min_z) * z_unit
             
             # Generate pseudo AFM images
-            pseudo_image = self.pseudo_afm(translated)  # [F*Btrans*Brot, H, W]
-
+            pseudo_image = self.pseudo_afm(translated)  # [F*Btrans*Brot, Btip, H, W]
+            pseudo_image = pseudo_image.reshape((-1, *pseudo_image.shape[-2:]))  # [F*Btrans*Brot*Btip, H, W]
+            
             # Match images
             if self.match_histgram:
                 (_, matched_image_np), _ = add_noise(self.target_image.unsqueeze(0).detach().cpu().numpy(), pseudo_image.detach().cpu().numpy())
-                matched_image = torch.from_numpy(matched_image_np).to(self.device)  # [F*Btrans*Brot, H, W]
+                matched_image = torch.from_numpy(matched_image_np).to(self.device)  # [F*Btrans*Brot*Btip, H, W]
             else:
                 min_values, _ = torch.min(pseudo_image.reshape(len(pseudo_image), -1), dim=1, keepdim=True)
                 max_values, _ = torch.max(pseudo_image.reshape(len(pseudo_image), -1), dim=1, keepdim=True)
                 max_values, min_values = max_values.unsqueeze(-1), min_values.unsqueeze(-1)
-                matched_image = (pseudo_image - min_values) / (max_values - min_values + 1e-6) * (self.target_maxvalue - self.target_medianvalue) + self.target_medianvalue  # [F*Btrans*Brot, H, W]
+                matched_image = (pseudo_image - min_values) / (max_values - min_values + 1e-6) * (self.target_maxvalue - self.target_medianvalue) + self.target_medianvalue  # [F*Btrans*Brot*Btip, H, W]
                 
             # Compute correlation
-            matched_image = matched_image.reshape((self.num_frames, -1, *matched_image.shape[-2:]))  # [F, Btrans*Brot, H, W]
-            cc = compute_correlation_coefficient(self.target_image.unsqueeze(1), matched_image)  # [F, 1, H, W] * [F, Btrans*Brot, H, W] -> [F, 1, Btrans*Brot]
+            matched_image = matched_image.reshape((self.num_frames, -1, *matched_image.shape[-2:]))  # [F, Btrans*Brot*Btip, H, W]
+            cc = compute_correlation_coefficient(self.target_image.unsqueeze(1), matched_image)  # [F, 1, H, W] * [F, Btrans*Brot*Btip, H, W] -> [F, 1, Btrans*Brot*Btip]
             
             # Determine the translation index with the highest correlation
-            reshaped_cc = cc.reshape((self.num_frames, self.translation_batch**2, self.rot_batch))  # [F, Btrans, Brot]
-            best_ccs, best_trans_index = torch.max(reshaped_cc, dim=-2)  # [F, Brot]
+            reshaped_cc = cc.reshape((self.num_frames, self.translation_batch**2, self.rot_batch, len(self.prove_radius_list)))  # [F, Btrans, Brot, Btip]
+            reshaped_cc, best_tip_index = torch.max(reshaped_cc, dim=-1)  # [F, Btrans, Brot]
+            best_ccs, best_trans_index = torch.max(reshaped_cc, dim=1)  # [F, Brot]
+            
+            # Extract the tip with the highest correlation
+            best_tip_index_4image = best_tip_index.unsqueeze(-1).unsqueeze(-1).expand(self.num_frames, self.translation_batch**2, self.rot_batch, self.H, self.W).unsqueeze(-3)  # [F, Btrans, Brot, 1, H, W]
+            matched_image = matched_image.reshape((self.num_frames, self.translation_batch**2, self.rot_batch, len(self.prove_radius_list), *matched_image.shape[-2:]))  # [F, Btrans, Brot, Btip, H, W]
+            best_images = torch.gather(matched_image, dim=3, index=best_tip_index_4image)  # [F, Btrans, Brot, 1, H, W]
+            best_images = best_images.squeeze(3)  # [F, Btrans, Brot, H, W]
             
             # Extract the translation with the highest correlation
             best_trans_index_4image = best_trans_index.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, self.H, self.W).unsqueeze(1)  # [F, 1, Brot, H, W]
-            matched_image = matched_image.reshape((self.num_frames, self.translation_batch**2, self.rot_batch, *matched_image.shape[-2:]))  # [F, Btrans, Brot, H, W]
-            best_images = torch.gather(matched_image, dim=1, index=best_trans_index_4image)  # [F, 1, Brot, H, W]
+            best_images = torch.gather(best_images, dim=1, index=best_trans_index_4image)  # [F, 1, Brot, H, W]
             best_images = best_images.squeeze(1)  # [F, Brot, H, W]
             
             translated = translated.reshape((self.num_frames, self.translation_batch**2, self.rot_batch, *self.xyz.shape[-2:]))# [F, Btrans, Brot, N, 3]
@@ -321,11 +365,16 @@ class RigidBodyFitting:
             assert best_ccs.shape == (self.num_frames, self.rot_batch), best_ccs.shape
             assert best_images.shape == (self.num_frames, self.rot_batch, self.H, self.W), best_images.shape
             assert best_translated.shape == (self.num_frames, self.rot_batch, *self.xyz.shape[-2:]), best_translated.shape
-            
+
             # Save results
             if step % self.log_interval == 0:
-                self.log[step] = {"cc": best_ccs.detach().cpu().numpy(), "image": best_images.detach().cpu().numpy(), "R": rots.detach().cpu().numpy(), "coords": best_translated.detach().cpu().numpy()}
-            
+                self.log[step] = {
+                    "cc": best_ccs.detach().cpu().numpy(), 
+                    "image": best_images.detach().cpu().numpy(), 
+                    "R": rots.detach().cpu().numpy(), 
+                    "coords": best_translated.detach().cpu().numpy(),
+                    }
+        
             if self.dry_run and time.time() - initial_time > 10:
                 break
         
@@ -333,12 +382,18 @@ class RigidBodyFitting:
         return summary
     
     def pseudo_afm(self, xyz):
-        pure_image = generate_landscape(xyz, self.xedges, self.yedges)
-        tip = generate_tip_shape(self.prove_radius, self.prove_angle, device=self.device)
+        pure_image, x_centers, y_centers = generate_landscape(xyz, self.xedges, self.yedges)
+                
+        afm_image_list = []
+        for prove_radius in self.prove_radius_list:
+            tip = generate_tip_shape(prove_radius, self.prove_angle, device=self.device)
+            pure_image = pure_image.reshape((-1, self.H, self.W))
+            afm_image = idilation(pure_image, tip)
+            afm_image_list.append(afm_image.unsqueeze(1))
+            
+        afm_images = torch.cat(afm_image_list, dim=1)
         
-        pure_image = pure_image.reshape((-1, self.H, self.W))
-        afm_image = idilation(pure_image, tip)
-        return afm_image
+        return afm_images
     
     def return_best(self):
         if len(self.log) == 0:
@@ -423,8 +478,12 @@ def load_results(output_dirs, stop_at=None):
 
         # Locate prediction files
         cifs = glob.glob(os.path.join(output_dir, "predictions", "*.cif"))
-        jsons = glob.glob(os.path.join(output_dir, "predictions", "*.json"))
-        npzs = glob.glob(os.path.join(output_dir, "predictions", "*.npz"))
+        jsons = [json for json in glob.glob(os.path.join(output_dir, "predictions", "*_summary_confidence_sample_*.json"))]
+        npzs = [npz for npz in glob.glob(os.path.join(output_dir, "predictions", "inputs.npz"))]
+        
+        if len(npzs) == 0:
+            continue
+        
         assert all(len(flist) == 1 for flist in [cifs, jsons, npzs]), output_dir
         
         # Load input .npz file
@@ -464,29 +523,42 @@ def load_results(output_dirs, stop_at=None):
             break
         
     # Concatenate collected data
-    images = np.concatenate(image_list, axis=0)
-    pred_xyzs = np.concatenate(pred_xyz_list, axis=0)
+    if len(image_list) > 0:
+        images = np.concatenate(image_list, axis=0)
+    else:
+        images = None
+        
+    if len(pred_xyz_list) > 0:
+        pred_xyzs = np.concatenate(pred_xyz_list, axis=0)
+        pred_traj = md.Trajectory(pred_xyzs, topology=traj.topology)
+    else:
+        pred_traj = None
     
     if len(true_xyz_list) > 0:
         true_xyzs = np.concatenate(true_xyz_list, axis=0)
+        true_traj = md.Trajectory(true_xyzs, topology=traj.topology)
     else:
-        true_xyzs = None
+        true_traj = None
     
     if len(truth_list) > 0:
         truths = np.concatenate(truth_list, axis=0)
     else:
         truths = None
     
-    targets = np.concatenate(target_list, axis=0)
-    restraints = np.concatenate(restraint_list, axis=0)
-    predictions = np.concatenate(prediction_list, axis=0)
-    
-    # Construct mdtraj trajectories
-    pred_traj = md.Trajectory(pred_xyzs, topology=traj.topology)
-    if true_xyzs is not None:
-        true_traj = md.Trajectory(true_xyzs, topology=traj.topology)
+    if len(target_list) > 0:
+        targets = np.concatenate(target_list, axis=0)
     else:
-        true_traj = None
+        targets = None
+    
+    if len(restraint_list) > 0:
+        restraints = np.concatenate(restraint_list, axis=0)
+    else:
+        restraints = None
+    
+    if len(prediction_list) > 0:
+        predictions = np.concatenate(prediction_list, axis=0)
+    else:
+        predictions = None
         
     return images, pred_traj, true_traj, truths, targets, restraints, predictions
 
@@ -510,11 +582,14 @@ def run_rigid_body_fitting(
     stop_at=None, 
     batchsize=20,
     resolution_nm=0.3, 
+    prove_radius_range=None, 
+    prove_radius_step=1.0,
     prove_radius=2.0, 
     min_z=0.0,
     rot_batch=1,
     translation_range=(-5.0, 5.0),
     use_ref_structure=False,
+    save_all=False,
     device="cuda",
     ):
     """
@@ -544,26 +619,23 @@ def run_rigid_body_fitting(
     # Load results from the specified output directories
     images, pred_traj, true_traj, truths, targets, restraints, predictions = load_results(output_dirs, stop_at=stop_at)
 
+    if images is None:
+        return {}
+    else:
+        assert pred_traj is not None
+        assert targets is not None
+        assert restraints is not None
+        assert predictions is not None
+    
     # Process in batches
     for i in range(math.ceil(len(images)/batchsize)):
         _ref_images = images[i*batchsize:(i+1)*batchsize]
         _pred_traj = pred_traj[i*batchsize:(i+1)*batchsize]
-
+        
         # Ground-truth trajectory (if available)
         if true_traj is not None:
             _true_traj = true_traj[i*batchsize:(i+1)*batchsize]
 
-        # Ground-truth restraints (scaled by 0.1)
-        if truths is not None:
-            _truths = 0.1 * truths[i*batchsize:(i+1)*batchsize]
-
-        # Target restraints (scaled)
-        _targets = 0.1 * targets[i*batchsize:(i+1)*batchsize]
-
-        # Model predictions (scaled)
-        #_restraints = 0.1 * restraints[i*batchsize:(i+1)*batchsize]  # (unused)
-        _predictions = 0.1 * predictions[i*batchsize:(i+1)*batchsize]
-        
         if use_ref_structure:
             # For each image, also perform rigid-body fitting with reference structure
             ref_traj = md.join([md.load(ref_pdb) for _ in range(len(_ref_images))])
@@ -576,14 +648,15 @@ def run_rigid_body_fitting(
                 np.concatenate([_pred_traj.xyz, ref_traj.xyz], axis=0),
                 topology=_pred_traj.topology
             )
+            
         else:
             _target_traj = _pred_traj
             
         # Initialize rigid-body fitting
         fitting = RigidBodyFitting(
-            _ref_images, _target_traj, steps, 
-            resolution_nm=resolution_nm, prove_radius=prove_radius, min_z=min_z, 
-            ref_pdb=ref_pdb, rot_batch=rot_batch, translation_range=translation_range, device=device,
+            _ref_images, _target_traj, steps, resolution_nm=resolution_nm, 
+            prove_radius_range=prove_radius_range, prove_radius_step=prove_radius_step, prove_radius=prove_radius, 
+            min_z=min_z, ref_pdb=ref_pdb, rot_batch=rot_batch, translation_range=translation_range, device=device,
         )
 
         # Perform sampling (rigid-body fitting iterations)
@@ -597,10 +670,6 @@ def run_rigid_body_fitting(
         _best_rots = summary["rots"][_best_rot_indices]
         _best_coords = summary["coords"][np.arange(len(_ccs)), _best_rot_indices]
         
-        # Compute squared errors against ground-truth restraints
-        if truths is not None:
-            _sqerrors = np.sum((_truths - _targets)**2, axis=1)
-        
         # Compute RMSDs against ground-truth trajectory
         if true_traj is not None:
             _rmsds = np.zeros((len(_pred_traj),))
@@ -609,21 +678,28 @@ def run_rigid_body_fitting(
                 _rmsds[j] = _rmsd
         
         # Prepare summary dictionary
-        summary = {
-            "all_cc": summary["cc"],
-            "all_rots": summary["rots"],
-            "cc": _best_ccs,
-            "rots": _best_rots,
-            "ref_images": _ref_images,
-            "pred_images": _best_images,
-            "pred_coords": _best_coords,
-            "ref_domain_distance": _targets,
-            "pred_domain_distance": _predictions,
-        }
+        if save_all:
+            summary = {
+                "all_pred_cc": summary["cc"],
+                "all_pred_rots": summary["rots"],
+                "all_pred_images": summary["images"],
+                "all_pred_coords": summary["coords"],
+                "top_cc": _best_ccs,
+                "top_rots": _best_rots,
+                "top_pred_images": _best_images,
+                "top_pred_coords": _best_coords,
+                "ref_images": _ref_images,
+            }
+        else:
+            summary = {
+                "top_cc": _best_ccs,
+                "top_rots": _best_rots,
+                "top_pred_images": _best_images,
+                "top_pred_coords": _best_coords,
+                "ref_images": _ref_images,
+            }
 
         # Add errors if available
-        if truths is not None:
-            summary["squared_error"] = _sqerrors
         if true_traj is not None:
             summary["rmsd"] = _rmsds
             summary["ref_coords"] = _true_traj.xyz,

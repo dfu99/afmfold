@@ -1,10 +1,14 @@
 import os
 import numpy as np
+import torch
 import logging
 import json
 import warnings
 import mdtraj as md
+from tqdm import tqdm
+import subprocess
 from contextlib import contextmanager, redirect_stdout, redirect_stderr
+import warnings
 
 from afmfold.domain import compute_domain_distance
 
@@ -57,6 +61,26 @@ def suppress_output(suppress=True):
         logging.disable(prev_logging_disable)
         warnings.filters = warnings_filters_copy
 
+def gpu_usage():
+    result = subprocess.run(
+        ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"],
+        stdout=subprocess.PIPE, text=True
+    )
+    
+    gpu_info = {}
+    for i, info in enumerate(result.stdout.strip().split("\n")):
+        util, used, total = map(int, info.split(","))
+        memory_pct = used / total * 100
+        gpu_info[i] = {"used": util, "memory": memory_pct}
+    return gpu_info
+
+def get_open_node():
+    gpu_info = gpu_usage()
+    sorted_nodes = sorted(list(gpu_info.keys()), key=lambda n: gpu_info[n]["used"] + 0.5 * gpu_info[n]["memory"])
+    open_node = sorted_nodes[0]
+    status = gpu_info[open_node]
+    return open_node, status
+
 def compute_rmsd_single_frame(t1, t2, atom_indices=None):
     """
     Args:
@@ -96,10 +120,26 @@ def add_arg_to_json(json_path, new_dict, out_path=None):
         out_path = json_path
 
     # Save
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
+    save_json(out_path, data, indent=2)
     return data
+
+def load_json(jsonfile):
+    with open(jsonfile, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data
+
+def save_json(jsonfile, data, indent=4):
+    with open(jsonfile, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=indent)
+
+def gather_traj(coordinate_files, is_tqdm=False):
+    xyz_list = []
+    for cif_file in tqdm(coordinate_files, total=len(coordinate_files), disable=not is_tqdm):
+        _traj = md.load(cif_file)
+        xyz_list.append(_traj.xyz)
+    xyz = np.concatenate(xyz_list, axis=0)   
+    traj = md.Trajectory(xyz, _traj.topology)
+    return traj
 
 def k_nearest_weighted_average(
     key_arr: np.ndarray,      # (N, D)
@@ -186,3 +226,67 @@ def k_nearest_weighted_average(
     closest_value[outlier_mask] = target_arr[outlier_mask]
     
     return closest_value
+
+def cat_dict(old_dict, new_dict):
+    # Return new_dict if old_dict is empty
+    if len(old_dict) == 0:
+        return new_dict
+    
+    # Check keys match
+    assert set(old_dict.keys()) == set(new_dict.keys())
+    
+    # Concatenate values
+    updated_dict = {}
+    for k in old_dict.keys():
+        old_v = old_dict[k]
+        new_v = new_dict[k]
+        
+        # Check shapes
+        if isinstance(old_v, torch.Tensor):
+            old_v = old_v.detach().cpu().numpy()
+        elif isinstance(old_v, np.ndarray):
+            pass
+        else:
+            raise NotImplementedError(type(old_v))
+        
+        if isinstance(new_v, torch.Tensor):
+            new_v = new_v.detach().cpu().numpy()
+        elif isinstance(new_v, np.ndarray):
+            pass
+        else:
+            raise NotImplementedError(type(new_v))
+        
+        # Concatenate
+        if new_v.shape[0] == 1 and old_v.shape[1:] == new_v.shape[1:]:
+            updated_v = np.concatenate([old_v, new_v], axis=0)
+        elif new_v.shape[0] != 1 and old_v.shape[1:] == new_v.shape:
+            updated_v = np.concatenate([old_v, new_v[None,...]], axis=0)
+        elif new_v.shape[0] != 1 and old_v.shape == new_v.shape:
+            updated_v = np.concatenate([old_v[None,...], new_v[None,...]], axis=0)
+        else:
+            raise NotImplementedError(f"new_v: {new_v.shape}, old_v: {old_v.shape}")
+        
+        updated_dict[k] = updated_v
+    
+    return updated_dict
+
+def check_datasize(data):
+    if isinstance(data, np.ndarray):
+        datasize = data.nbytes
+    elif isinstance(data, torch.Tensor):
+        datasize = data.element_size() * data.numel()
+    elif isinstance(data, (int, float)):
+        datasize = np.array(data).nbytes
+    elif isinstance(data, (list, tuple)):
+        datasize_list = [check_datasize(d) for d in data]
+        datasize = sum(datasize_list)
+    elif isinstance(data, dict):
+        datasize_list = [check_datasize(d) for d in data.values()]
+        datasize = sum(datasize_list)
+    else:
+        warnings.warn(
+            f"check_datasize: invalid data type = {type(data)}",
+            UserWarning
+        )
+        datasize = 0
+    return datasize
