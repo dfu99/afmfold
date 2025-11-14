@@ -13,174 +13,18 @@ from tqdm import tqdm
 from afmfold.images import generate_landscape, sample_uniform_so3, apply_rotations, generate_tip_shape, idilation, add_noise
 from afmfold.utils import compute_rmsd_single_frame
 
-def hat(v):
-    """
-    Skew map (R^3 -> so(3)).
-    v: (..., 3)
-    returns: (..., 3, 3)
-    """
-    x, y, z = v.unbind(dim=-1)
-    O = torch.zeros_like(x)
-    return torch.stack([
-        torch.stack([ O, -z,  y], dim=-1),
-        torch.stack([ z,  O, -x], dim=-1),
-        torch.stack([-y,  x,  O], dim=-1),
-    ], dim=-2)
-
-def _taylor_sinc(x):
-    # sinc(x) = sin(x)/x, stable around 0
-    x2 = x * x
-    return 1 - x2/6 + x2*x2/120 - x2*x2*x2/5040
-
-def _taylor_omc_over_x2(x):
-    # (1 - cos x) / x^2, stable around 0
-    x2 = x * x
-    return 0.5 - x2/24 + x2*x2/720 - x2*x2*x2/40320
-
-def exp_so3(omega):
-    """
-    Exponential map from so(3) (axis-angle vector) to SO(3).
-    omega: (..., 3) axis-angle vector
-    returns: (..., 3, 3) rotation matrix
-    """
-    # Angle
-    theta = torch.linalg.norm(omega, dim=-1)
-    theta_expand2 = theta.unsqueeze(-1).unsqueeze(-1)
-    K = hat(omega)  # (..., 3, 3)
-    I = torch.eye(3, dtype=omega.dtype, device=omega.device).expand(K.shape)
-
-    # Safe coefficients
-    eps = torch.finfo(omega.dtype).eps if omega.dtype.is_floating_point else 1e-8
-    small = theta < 1e-4
-
-    # Compute sinc and (1-cos)/theta^2 with stable series near 0
-    sinc = torch.empty_like(theta)
-    omc_over_t2 = torch.empty_like(theta)
-
-    # Series for small angles
-    sinc[small] = _taylor_sinc(theta[small])
-    omc_over_t2[small] = _taylor_omc_over_x2(theta[small])
-
-    # Direct for others
-    th_safe = theta[~small] + eps
-    sinc[~small] = torch.sin(th_safe) / th_safe
-    omc_over_t2[~small] = (1 - torch.cos(th_safe)) / (th_safe * th_safe)
-
-    sinc = sinc.unsqueeze(-1).unsqueeze(-1)
-    omc_over_t2 = omc_over_t2.unsqueeze(-1).unsqueeze(-1)
-
-    R = I + sinc * K + omc_over_t2 * (K @ K)
-    return R
-
-def sample_so3_gaussian(
-    center,
-    n,
-    sigma=0.2,
-    Sigma=None,
-    seed=None,
-):
-    """
-    Sample rotations on SO(3) around `center` via tangent-space Gaussian + exp.
-    
-    Args:
-        center: (3,3) rotation matrix (torch.Tensor)
-        n: number of samples
-        sigma: isotropic std (radians) if Sigma is None
-        Sigma: (3,3) SPD covariance in the tangent space (overrides sigma)
-        seed: optional RNG seed for reproducibility
-    Returns:
-        rots: (n,3,3) sampled rotation matrices
-    """
-    assert center.shape == (3,3), "center must be (3,3)"
-    device = center.device
-    dtype = center.dtype if center.dtype.is_floating_point else torch.float64
-
-    if seed is not None:
-        gen = torch.Generator(device=device)
-        gen.manual_seed(seed)
-    else:
-        gen = None
-
-    if Sigma is None:
-        # isotropic covariance
-        L = torch.eye(3, dtype=dtype, device=device) * sigma
-    else:
-        # Cholesky factor for general SPD covariance
-        Sigma = Sigma.to(device=device, dtype=dtype)
-        L = torch.linalg.cholesky(Sigma)
-
-    eps = torch.randn((n, 3), dtype=dtype, device=device, generator=gen) @ L.T  # (n,3)
-    R_delta = exp_so3(eps)                                                      # (n,3,3)
-    center_expanded = center.to(dtype=dtype).unsqueeze(0).expand(n, -1, -1)
-    rots = center_expanded @ R_delta
-    return rots
-
-def sample_so3_gaussian_batched(
-    center: torch.Tensor,          # (B,3,3)
-    n: int,
-    sigma: float = 0.2,
-    Sigma: torch.Tensor | None = None,  # (3,3) or (B,3,3)
-    seed: int | None = None,
-):
-    """
-    Sample rotations on SO(3) around each center[b] via tangent-space Gaussian + exp.
-
-    Args:
-        center: (B,3,3) rotation matrices (torch.Tensor)
-        n: number of samples per batch item
-        sigma: isotropic std (radians) when Sigma is None
-        Sigma: (3,3) shared SPD covariance or (B,3,3) per-batch SPD covariance
-        seed: RNG seed (optional)
-    Returns:
-        rots: (B,n,3,3) sampled rotation matrices
-    """
-    assert center.ndim == 3 and center.shape[-2:] == (3,3), "center must be (B,3,3)"
-    B = center.shape[0]
-    device = center.device
-    dtype = center.dtype if center.dtype.is_floating_point else torch.float64
-
-    gen = None
-    if seed is not None:
-        gen = torch.Generator(device=device)
-        gen.manual_seed(seed)
-
-    # tangent noise eps ~ N(0, Sigma) in R^3
-    eps = torch.randn((B, n, 3), dtype=dtype, device=device, generator=gen)  # (B,n,3)
-
-    if Sigma is None:
-        eps = eps * float(sigma)
-    else:
-        Sigma = Sigma.to(device=device, dtype=dtype)
-        if Sigma.ndim == 2:
-            # shared covariance
-            L = torch.linalg.cholesky(Sigma)                    # (3,3)
-            eps = eps @ L.transpose(-1, -2)                     # (B,n,3)
-        elif Sigma.ndim == 3:
-            # per-batch covariance
-            assert Sigma.shape == (B,3,3), "Sigma must be (3,3) or (B,3,3)"
-            L = torch.linalg.cholesky(Sigma)                    # (B,3,3)
-            eps = torch.einsum('bnc,bcf->bnf', eps, L.transpose(1,2))  # (B,n,3)
-        else:
-            raise ValueError("Sigma must be None, (3,3), or (B,3,3)")
-
-    # Map to SO(3): exp_so3 expects (...,3) -> (...,3,3)
-    R_delta = exp_so3(eps.reshape(B*n, 3)).reshape(B, n, 3, 3)  # (B,n,3,3)
-
-    # Left-multiply around each center
-    C = center.to(dtype=dtype).unsqueeze(1).expand(B, n, 3, 3)  # (B,n,3,3)
-    rots = C @ R_delta                                          # (B,n,3,3)
-    return rots
-
-def compute_correlation_coeﬃcient(image1, image2):
+def compute_correlation_coefficient(image1, image2):
     """
     Args:
-        image1: (F, B1, H, W) or (B1, H, W). 後者の場合、F = 1として扱う.
-        image2: (F, B2, H, W) or (B2, H, W). 後者の場合、F = 1として扱う.
+        image1: (F, B1, H, W) or (B1, H, W). 
+                If the latter, F = 1 is assumed.
+        image2: (F, B2, H, W) or (B2, H, W).
+                If the latter, F = 1 is assumed.
         
     Returns:
-        cc: (F, B1, B2).
+        cc: (F, B1, B2)
     """
-    # 形状の確認
+    # Check the input types and convert to torch tensors if necessary
     if isinstance(image1, np.ndarray) and isinstance(image2, np.ndarray):
         image1 = torch.from_numpy(image1)
         image2 = torch.from_numpy(image2)
@@ -188,6 +32,7 @@ def compute_correlation_coeﬃcient(image1, image2):
     else:
         is_numpy = False
         
+    # Reshape the inputs to have the form (F, B, H, W)
     image1 = image1.reshape((-1, *image1.shape[-3:]))
     image2 = image2.reshape((-1, *image2.shape[-3:]))
     F1, B1, H1, W1 = image1.shape
@@ -196,12 +41,19 @@ def compute_correlation_coeﬃcient(image1, image2):
     assert H1 == H2
     assert W1 == W2
     F, H, W = F1, H1, W1
+
+    # Reshape to broadcastable form
     image1 = image1.reshape((F, B1, 1, H, W))
     image2 = image2.reshape((F, 1, B2, H, W))
     
-    # cc の計算
-    cc = torch.sum(image1 * image2, dim=(-2,-1)) / torch.sqrt(torch.sum(image1**2, dim=(-2,-1))) / torch.sqrt(torch.sum(image2**2, dim=(-2,-1)))  # [F, B1, B2]
+    # Compute the correlation coefficient (cc)
+    cc = (
+        torch.sum(image1 * image2, dim=(-2, -1))
+        / torch.sqrt(torch.sum(image1**2, dim=(-2, -1)))
+        / torch.sqrt(torch.sum(image2**2, dim=(-2, -1)))
+    )  # [F, B1, B2]
     
+    # Convert back to NumPy if the inputs were NumPy arrays
     if is_numpy:
         cc = cc.detach().cpu().numpy()
     return cc
@@ -274,16 +126,17 @@ class RigidBodyFitting:
         if self.prove_radius_range is None and self.prove_radius is not None:
             self.prove_radius_list = [self.prove_radius,]
         elif self.prove_radius_range is not None and self.prove_radius is None:
-            self.prove_radius_list = [r * self.prove_radius_step for r in range(math.floor(self.prove_radius_range[0]/self.prove_radius_step), math.ceil(self.prove_radius_range[1]/self.prove_radius_step)+1)]
+            self.prove_radius_list = [r * self.prove_radius_step for r in range(math.floor(self.prove_radius_range[0]/self.prove_radius_step), math.ceil(self.prove_radius_range[1]/self.prove_radius_step)+1) if r > 0]
         else:
             raise NotImplementedError(f"self.prove_radius_range: {self.prove_radius_range}, self.prove_radius: {self.prove_radius}")
         
         self.xyz = torch.from_numpy(traj.xyz).to(device)
+        self.F, self.N, _ = self.xyz.shape
         
         # Compute COM
         cleaned_target_image = threshold_and_mask(self.target_image.detach().cpu().numpy())
         yxs = torch.cat([torch.as_tensor(center_of_mass(cleaned_target_image[i])).unsqueeze(0) for i in range(len(cleaned_target_image))], dim=0)  # [F, 3]
-        self.center = torch.cat([yxs[:,1][:,None], yxs[:,0][:,None], torch.zeros((len(cleaned_target_image),1))], dim=-1).to(device)
+        self.center = resolution_nm * torch.cat([yxs[:,1][:,None], yxs[:,0][:,None], torch.zeros((len(cleaned_target_image),1))], dim=-1).to(device)
         self.xedges = - 0.5 * resolution_nm + resolution_nm * torch.arange(self.W + 1, device=device)
         self.xgrid = resolution_nm * torch.arange(self.W, device=device)
         self.yedges = - 0.5 * resolution_nm + resolution_nm * torch.arange(self.H + 1, device=device)
@@ -305,7 +158,7 @@ class RigidBodyFitting:
         translated = xyz - com + self.center.reshape([-1,] + [1 for _ in range(xyz.ndim - 2)] + [3,])  # [..., N, 3]
         return translated
     
-    def sample(self, is_tqdm=True, desc=None):
+    def sample(self, save_all=True, is_tqdm=True, desc=None):
         initial_time = time.time()
         for step in tqdm(range(math.ceil(self.steps / self.rot_batch)), disable=not is_tqdm, desc=desc):
             # Apply rotation
@@ -378,12 +231,11 @@ class RigidBodyFitting:
             if self.dry_run and time.time() - initial_time > 10:
                 break
         
-        summary = self.summarize_results()
+        summary = self.summarize_results(save_all=save_all)
         return summary
     
     def pseudo_afm(self, xyz):
         pure_image, x_centers, y_centers = generate_landscape(xyz, self.xedges, self.yedges)
-                
         afm_image_list = []
         for prove_radius in self.prove_radius_list:
             tip = generate_tip_shape(prove_radius, self.prove_angle, device=self.device)
@@ -403,23 +255,40 @@ class RigidBodyFitting:
             best_index = np.argmax(ccs)
             return self.log[best_index.item()]
         
-    def summarize_results(self):
+    def summarize_results(self, save_all=True):
         # If there is nothing to save
         if len(self.log) == 0:
             return {}
         
         ccs = np.concatenate([v["cc"] for v in self.log.values()], axis=1)  # [F, S]
-        images = np.concatenate([v["image"] for v in self.log.values()], axis=1)  # [F, S, H, W]
-        rots = np.concatenate([v["R"] for v in self.log.values()], axis=0)  # [S, 3, 3]
-        coords = np.concatenate([v["coords"] for v in self.log.values()], axis=1)  # [F, S, N, 3]
+        summary = {"all_pred_cc": ccs}
         
-        # Save
-        summary = {
-            "cc": ccs,
-            "images": images,
-            "rots": rots,
-            "coords": coords,
-        }
+        if save_all:
+            images = np.concatenate([v["image"] for v in self.log.values()], axis=1)  # [F, S, H, W]
+            rots = np.concatenate([v["R"] for v in self.log.values()], axis=0)  # [S, 3, 3]
+            coords = np.concatenate([v["coords"] for v in self.log.values()], axis=1)  # [F, S, N, 3]
+
+            # Save
+            summary["all_pred_rots"] = rots
+            summary["all_pred_images"] = images
+            summary["all_pred_coords"] = coords
+        
+        best_rot_indices = np.argmax(ccs, axis=1)  # Best rotation index per frame
+        best_ccs = ccs[np.arange(self.F), best_rot_indices]
+        best_images = np.zeros((self.F, self.H, self.W))
+        best_rots = np.zeros((self.F, 3, 3))
+        best_coords = np.zeros((self.F, self.N, 3))
+        for f in range(self.F):
+            best_rot_idx = best_rot_indices[f]
+            best_images[f,:,:] = [v["image"][f] for i, v in enumerate(self.log.values()) if i == best_rot_idx][0]
+            best_rots[f,:,:] = [v["R"] for i, v in enumerate(self.log.values()) if i == best_rot_idx][0]
+            best_coords[f,:,:] = [v["coords"][f] for i, v in enumerate(self.log.values()) if i == best_rot_idx][0]
+        
+        summary["top_cc"] = best_ccs
+        summary["top_rots"] = best_rots
+        summary["top_pred_images"] = best_images
+        summary["top_pred_coords"] = best_coords
+        
         return summary
 
 def save_args_to_file(args, json_path, **kwargs):
@@ -656,19 +525,13 @@ def run_rigid_body_fitting(
         fitting = RigidBodyFitting(
             _ref_images, _target_traj, steps, resolution_nm=resolution_nm, 
             prove_radius_range=prove_radius_range, prove_radius_step=prove_radius_step, prove_radius=prove_radius, 
-            min_z=min_z, ref_pdb=ref_pdb, rot_batch=rot_batch, translation_range=translation_range, device=device,
+            min_z=min_z, ref_pdb=ref_pdb, rot_batch=rot_batch, translation_range=translation_range, device=device, 
         )
 
         # Perform sampling (rigid-body fitting iterations)
-        summary = fitting.sample()
+        summary = fitting.sample(save_all=save_all)
         
-        # Extract best correlation coefficients (CC) and corresponding data
-        _ccs = summary["cc"]
-        _best_rot_indices = np.argmax(_ccs, axis=1)  # Best rotation index per frame
-        _best_ccs = _ccs[np.arange(len(_ccs)), _best_rot_indices]
-        _best_images = summary["images"][np.arange(len(_ccs)), _best_rot_indices]
-        _best_rots = summary["rots"][_best_rot_indices]
-        _best_coords = summary["coords"][np.arange(len(_ccs)), _best_rot_indices]
+        summary["ref_images"] = _ref_images
         
         # Compute RMSDs against ground-truth trajectory
         if true_traj is not None:
@@ -676,36 +539,20 @@ def run_rigid_body_fitting(
             for j in range(len(_pred_traj)):
                 _rmsd = compute_rmsd_single_frame(_pred_traj[j], _true_traj[j])
                 _rmsds[j] = _rmsd
-        
-        # Prepare summary dictionary
-        if save_all:
-            summary = {
-                "all_pred_cc": summary["cc"],
-                "all_pred_rots": summary["rots"],
-                "all_pred_images": summary["images"],
-                "all_pred_coords": summary["coords"],
-                "top_cc": _best_ccs,
-                "top_rots": _best_rots,
-                "top_pred_images": _best_images,
-                "top_pred_coords": _best_coords,
-                "ref_images": _ref_images,
-            }
-        else:
-            summary = {
-                "top_cc": _best_ccs,
-                "top_rots": _best_rots,
-                "top_pred_images": _best_images,
-                "top_pred_coords": _best_coords,
-                "ref_images": _ref_images,
-            }
-
-        # Add errors if available
-        if true_traj is not None:
+            
             summary["rmsd"] = _rmsds
             summary["ref_coords"] = _true_traj.xyz,
             
         # Concatenate current batch summary into total summary
         total_summary = cat_data([total_summary, summary])
     
+    if use_ref_structure:
+        half_size = int(len(total_summary["top_cc"]) / 2)
+        total_summary = {
+            new_k: new_v
+            for k, v in total_summary.items()
+            for new_k, new_v in [(k, v[:half_size]), (k + "_pdb", v[half_size:])]
+        }
+            
     return total_summary
 
