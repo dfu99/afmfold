@@ -1,10 +1,8 @@
 ## Training
-In AFM-Fold, a CNN is trained to learn the correspondence between AFM images and the collective variables (CVs) of the underlying structures.  
-The following code examples illustrate how to generate noiseless training data from MD conformations of Adenylate Kinase, and then train the CNN.
+In AFM-Fold, a CNN is trained to learn the correspondence between AFM images and the collective variables (CVs) of the underlying structures.
+The following code examples illustrate how to generate noiseless training data from MD conformations of Adenylate Kinase (with labels of inter-domain distances), and then train the CNN.
 
-1. **Prepare a candidate conformation set**  
-    The exact candidate conformation set for AK is distributed as `../results/ak_train.dcd` and `../results/ak_train.pdb`.
-    Also, you can use `generate_candidates.py` to generate candidate conformation set, and if you have a long MD simulation, candidate conformation set can also be extracted from it.
+1. **Prepare a candidate conformation set** using [generate_candidates.py](generate_candidates.py). 
     
     ```bash
     # Prepare output directories
@@ -22,9 +20,12 @@ The following code examples illustrate how to generate noiseless training data f
     ls data/candidates/4ake/
     ```
 
-2. **Compute CVs corresponding to the trajectory**  
-    For example, to compute inter-domain distances from the MD trajectory, you can use:
+   The exact candidate conformation set used in the paper is distributed as `../results/ak_train.dcd/pdb` (for FlhA_C, `../results/flhac_train.dcd/pdb`).
+    Also, if you have a long MD simulation, candidate conformation set can also be extracted from it.
 
+2. **Compute CVs corresponding to the trajectory** 
+    To compute inter-domain distances from the MD trajectory, run the following python code.
+    
     ```python
     import mdtraj as md
     import numpy as np
@@ -100,10 +101,30 @@ ls ./storage
 
 # Run inference.
 nohup python scripts/inference.py \
+    --name 4ake \
     --image-path path/to/afm_images \
     --ckpt path/to/your_model.pt \
     --json-path ./storage/4ake-with-msa.json \
     --out-dir out/inference/ \
     --device cuda \
     > inference.log 2>&1 &
+```
+
+## Evaluation
+You can run rigid-body fitting for multiple results.
+For example, if you want to run rigid-body fitting for all inference results `out/inference/4ake/seed_*`, run the following command.
+
+```bash
+nohup python scripts/rigid_body_fitting.py \
+    --output_dir out/inference/4ake/seed_* \
+    --ref-pdb storage/4ake.pdb \
+    --resolution-nm 0.3 \
+    --name fitting \
+    --prove-radius-mean 1.0 \
+    --prove-radius-range 1.0 \
+    --prove-radius-step 1.0 \
+    --steps 50000 \
+    --skip-finished \
+    --use-ref-structure \  # Remove this when you do not want to run rigid-body fitting with PDB structure. 
+    > fitting.log 2>&1 &
 ```
