@@ -1,3 +1,5 @@
+\setcounter{section}{0}
+\renewcommand{\thesection}{S\arabic{section}}
 \setcounter{equation}{0}
 \renewcommand{\theequation}{S\arabic{equation}}
 \setcounter{figure}{0}
@@ -42,7 +44,7 @@ and found an optimal navigating parameter set.
 %\label{app:guidance_exp}
 
 \paragraph{Navigating family and design of the sweep.}
-We defined navigating schedules $\hat{\eta}_{\hat{t}}$ from the sigmoidal family defined in \cref{eq:sigmoid}.
+We defined navigating schedules $\hat{\eta}_{\hat{t}}$ from the sigmoidal family defined in \Cref{eq:sigmoid}.
 Specifically, we vary two hyperparameters that determine \emph{when} navigating turns on ($\hat{t}_{\text{start}}$) and \emph{how strong} it becomes at the end ($y_{\text{max}}$).
 For the two hyperparameters, we select five candidate values each: 
 $\hat{t}_{\text{start}}$ is chosen at evenly spaced points in $[0.4,0.9]$, 
@@ -93,9 +95,9 @@ We conducted two types of experiments for these proteins:
 Across both the in-distribution and out-of-distribution targets, three clear patterns emerge.  
 
 \begin{itemize}
-    \item First, there is a dividing line in the MSE landscape, approximately connecting $(\hat{t}_{\text{start}}, y_{\text{max}})=(0.65,\,0.60)$ and $(0.73,\,1.60)$ (see  \cref{fig:guidance_scheduling_ak} (b, h) and \cref{fig:guidance_scheduling_flhac} (b, h)).
+    \item First, there is a dividing line in the MSE landscape, approximately connecting $(\hat{t}_{\text{start}}, y_{\text{max}})=(0.65,\,0.60)$ and $(0.73,\,1.60)$ (see  \Cref{fig:guidance_scheduling_ak} (b, h) and \Cref{fig:guidance_scheduling_flhac} (b, h)).
         On the right side of this line (i.e., with later $\hat{t}_{\text{start}}$ and smaller $y_{\text{max}}$), the MSE between the target CVs and the generated conformation's CVs rises sharply. 
-    \item Second, the MolProbity-score contours are roughly circular, centered near $(\hat{t}_{\text{start}}, y_{\text{max}})=(0.40,\,1.60)$, rather than linear (see \cref{fig:guidance_scheduling_ak} (a, g) and \cref{fig:guidance_scheduling_flhac} (a, g)).
+    \item Second, the MolProbity-score contours are roughly circular, centered near $(\hat{t}_{\text{start}}, y_{\text{max}})=(0.40,\,1.60)$, rather than linear (see \Cref{fig:guidance_scheduling_ak} (a, g) and \Cref{fig:guidance_scheduling_flhac} (a, g)).
     \item Third, combining these two observations, we find that starting the guidance early (small $\hat{t}_{\text{start}}$) and keeping the restraint weak (low $y_{\text{max}}$) enables the application of constraints 
         without substantially compromising the physical plausibility of the generated structures.
 \end{itemize}
@@ -138,11 +140,11 @@ Across both the in-distribution and out-of-distribution targets, three clear pat
     \label{fig:guidance_scheduling_flhac}
 \end{figure}
 
-\subsection{Conclusion}
+%\subsection{Conclusion}
 Overall, we observed the expected trade-off: stronger guidance improves agreement with the target, but tends to degrade structural plausibility. 
 At the same time, we obtained an additional insight: rather than applying strong restraints only in the final stages of the reverse process, it is more effective to apply weak restraints from the early stages.  
-In fact, regions with low MSE consistently appear in the area of $\hat{t}{\text{start}} \lessapprox 0.6$ (see \cref{guidance_scheduling_ak} (b,h) and \cref{guidance_scheduling_flhac} (b,h)), 
-and among them, regions with low MolProbity scores are located where $\hat{y}{\text{max}}$ is relatively small (see \cref{guidance_scheduling_ak} (a,g) and \cref{guidance_scheduling_flhac} (a,g)).
+In fact, regions with low MSE consistently appear in the area of $\hat{t}_{\text{start}} \lessapprox 0.6$ (see \Cref{fig:guidance_scheduling_ak} (b,h) and \Cref{fig:guidance_scheduling_flhac} (b,h)), 
+and among them, regions with low MolProbity scores are located where $\hat{y}_{\text{max}}$ is relatively small (see \Cref{fig:guidance_scheduling_ak} (a,g) and \Cref{fig:guidance_scheduling_flhac} (a,g)).
 
 Based on these observations, in our study we adopt $\hat{t}_{\text{start}}=0.6$ and $y_{\text{max}}=0.6$ that allow effective guidance without substantially degrading structural quality.
 
@@ -183,8 +185,8 @@ $N_{\text{hidden-layers}} = 3$, $D_{\text{hidden}} = 64$, $D_{\text{out}} = N_{\
 \end{algorithmic}
 \end{algorithm}
 
-\section{Additional Figures}
-\label{app:additional_fig}
+%\section{Supporting figures}
+%\label{app:additional_fig}
 
 \begin{figure}[H]
     \centering
