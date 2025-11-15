@@ -9,7 +9,7 @@ Therefore, we decided to use a rotation-equivariant CNN model (\emph{group-equiv
 %To mitigate the sensitivity to alignment, we introduce an approach that estimates structure-related CVs directly from 2D AFM images, without requiring alignment. For this purpose, we employ a rotation-equivariant CNN (\emph{group-equivariant} CNN; g-CNN) \cite{CohenWelling2016_GCNN, CohenWelling2017_SteerableCNNs, e2cnn, WeilerEtAl2018_3DSteerableCNNs}, which is known to achieve high data efficiency by constraining the hypothesis space through rotational symmetry.
 
 In navigating the structure generation process of \AFiii to generate 3D structures consistent with AFM images, it would be possible to optimize by calculating image similarity each time, as done in rigid-body fitting. 
-In this case, higher image reproduction is expected, but on the other hand, we empirically found that it tends to impose restraints that drive the generated structures toward smaller volumes. This behavior arises because the image similarity landscape is highly multimodal and extremely sensitive to translational and in-plane rotational differences. Under a feasible amount of alignment search on GPUs, inaccurate gradients are continuously applied, resulting in misleading forces during optimization. 
+In this case, higher image reproduction is expected, but on the other hand, we empirically found that it tends to impose restraints that drive the generated structures toward smaller volumes. This behavior arises because the image similarity landscape is highly multimodal and extremely sensitive to translational and in-plane rotational differences. Under a feasible amount of alignment search, inaccurate gradients are continuously applied, resulting in misleading forces during optimization. 
 Therefore, instead of relying on image-to-image correlation, it was necessary to construct a comparison measure that is robust to in-plane rotations and translations of AFM images. In particular, to handle a large number of AFM frames, the similarity between the generated intermediate structures and the images needed to be computed efficiently.
 %Therefore, in this study, we decided that our g-CNN model estimates low-dimensional CVs (such as inter-domain distances in the case of multi-domain proteins) and uses them for structure generation in \AFiii.
 
@@ -59,14 +59,14 @@ For such lifted fields, if the kernel satisties the following constraint about s
     \big(k * (\pi(0,g)v)\big)(x)[h] \;=\; \big(\pi(0,g)(k * v)\big)(x)[h].
     \label{eq:gcnn-rot-equiv}
 \end{equation}
-For details, see \cite{e2cnn}. 
+The proof can be found in Appendix D.1 of \cite{e2cnn}. 
 Hence, adding to the translation equivariance \Cref{eq:trans-equiv}, we can construct CNNs equivariant to the chosen discrete rotation group $C_N$. 
 Channel-wise activations commute with the orientation relabeling, so equivariance to rotations (and translations) is preserved layer by layer.
 
 % --- Multi-block and pooling ---
 A practical architecture uses multiple lifted blocks $v_1,\dots,v_b$; the overall action is the block-diagonal (direct-sum) representation $\pi=\bigoplus_{i=1}^b \pi_i$. In \Model, because we require a vector invariant to rotations and translations, we apply a group pooling and a spacial pooling per block at last; i.e.,
 \begin{equation}
-    \mathrm{Pool}(v_i)(x) := \max_{h\in C_N} v_i(x)[h], \quad
-    \mathrm{Pool}(v_i) := \text{Mean}_{x \in \R^2} v_i(x),
+    \mathrm{GroupPooling}(v_i)(x) := \max_{h\in C_N} v_i(x)[h], \quad
+    \mathrm{SpatialPooling}(v_i) := \text{Mean}_{x \in \R^2} v_i(x),
 \end{equation}
 which yields features invariant to translations and rotations.
