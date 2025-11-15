@@ -31,7 +31,7 @@
 \usepackage{authblk}
 
 \usepackage{csquotes}
-\usepackage[backend=biber,style=chem-acs,sorting=none,giveninits=true]{biblatex}
+\usepackage[backend=biber,style=chem-acs,sorting=none,giveninits=true,doi=true,url=true]{biblatex}
 \addbibresource{citation.bib}
 
 % 定理環境
@@ -49,3 +49,10 @@
 
 % カスタムコマンド（既存）
 \input{commands}
+
+% Settings for doi and url.
+\AtEveryBibitem{
+  \iffieldundef{doi}
+    {}
+    {\clearfield{url}}
+}
