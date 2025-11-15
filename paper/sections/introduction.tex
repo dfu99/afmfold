@@ -34,7 +34,7 @@ This enables rapid reconstruction of structures from AFM images while reducing c
         \textbf{(a)} Schematic diagram of \Model. 
         The AFM image, shown at the lower left, serves as the input and is processed as follows: 
         (1) coordinates in the inter-domain distance space are predicted from the AFM image by a group-invariant CNN 
-        (2) during the generative process, where the diffusion step $t$ progresses discretely from 0 to 200, the mean squared error (MSE) between the predicted coordinates and the generated conformations is computed when $t > 108$; 
+        (2) during the generative process, where the diffusion step $i$ progresses discretely from 0 to 200, the mean squared error (MSE) between the predicted coordinates and the generated conformations is computed when $i > 108$; 
         (3) the gradient of the MSE is used as a correction score to guide the generative process of \AFiii. 
         \textbf{(b)(c)} Results of structure prediction from pseudo-AFM images of \AK.
         In (b), the upper panels show the reference pseudo-AFM images generated from the conformations in the PDB database (close: 1AKE, open: 4AKE). The lower panels show the reproduced pseudo-AFM images generated from the structures estimated by \Model.
