@@ -6,7 +6,7 @@ Specifically, while \AFiii employs a DDPM following the variance-preserving (VP)
 
 Let $a$ denote an amino acid sequence and $X=(x_1,\ldots,x_m)$ the 3D coordinates of all atoms, where $x_i\in\mathbb{R}^3$.
 We write $X_{t_i}$ for the state at diffusion time $t_i$ ($T > t_1 > t_2 > \dots > t_N > 0$).
-Sampling the generative process of \AFiii can be written as the stochastic sampler of EDM:
+Sampling the generative process of \AFiii can be written as the stochastic sampler of EDM \cite{karras2022elucidating}:
 \begin{equation}
     \begin{split}
         &X_{t_{i+1}} = X_{t_i} - \eta (t_{i+1} - \hat{t}_i) \nabla_{X_{t_i}} \log p_{t_i}(X_{t_i} | a) + \lambda \sqrt{\hat{t}_i^2 - t_i^2} \epsilon, \\
