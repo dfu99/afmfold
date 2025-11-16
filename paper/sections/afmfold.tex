@@ -105,7 +105,8 @@ All models in this paper were trained on a single node equipped with an NVIDIA R
 %An important aspect in reconstructing conformations from AFM images is that the data are inherently time series. By analyzing AFM images as a temporal sequence, one can visualize domain fluctuations and morphing pathways of proteins. This perspective allows them to be interpreted as parts of continuous transitions, and provides the opportunity to establish connections with theoretical frameworks such as molecular simulations or Markov state models. Accordingly, computational efficiency that enables the rapid processing of multiple frames is essential.
 
 The inference step consists of the estimation of CVs (inter-domain distances) from the AFM image by the g-CNN, and the navigation of the generative process of \AFiii using the estimated CVs. 
-In this study, we require that the MSE of the g-CNN for the generated structures be below about $3~\mathrm{nm}$, 
+In this study, we require that the MSE of the g-CNN for the generated structures be below sub-\AA{}, 
+%$0.3~\mathrm{nm}$, 
 which is an important resolution for distinguishing different conformations for both \AK and \flhac. 
 %As will be shown in \Cref{sec:results}, this requirement was met for both systems. 
 
