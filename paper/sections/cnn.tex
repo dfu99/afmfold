@@ -66,7 +66,7 @@ Channel-wise activations commute with the orientation relabeling, so equivarianc
 % --- Multi-block and pooling ---
 A practical architecture uses multiple lifted blocks $v_1,\dots,v_b$; the overall action is the block-diagonal (direct-sum) representation $\pi=\bigoplus_{i=1}^b \pi_i$. In \Model, because we require a vector invariant to rotations and translations, we apply group pooling and spatial pooling per block at last; i.e.,
 \begin{equation}
-    \mathrm{GroupPooling}(v_i)(x) := \max_{h\in C_N} v_i(x)[h], \quad
+    \mathrm{GroupPooling}(v_i)(x) := \text{Max}_{h\in C_N} v_i(x)[h], \quad
     \mathrm{SpatialPooling}(v_i) := \text{Mean}_{x \in \R^2} v_i(x),
 \end{equation}
 which yields features invariant to translations and rotations.
