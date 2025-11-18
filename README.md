@@ -44,14 +44,12 @@ If you use AFM-Fold in your work, please cite as follows:
 
 ```bibtex
 @article{kawai2025afmfold,
-  title   = {Rapid Reconstruction of Atomic 3D Configurations from an AFM image by AlphaFold~3},
+  title   = {AFM-Fold: Rapid Reconstruction of Protein Conformations from AFM Images},
   author  = {Tsuyoshi, Kawai and Yasuhiro, Matsunaga},
-  journal = {Journal TBD},
+  journal = {bioRxiv},
   year    = {2025},
-  volume  = {xx},
-  number  = {yy},
-  pages   = {zz-zz},
-  doi     = {https://doi.org/10.5281/zenodo.17597490}
+  url     = {https://www.biorxiv.org/content/10.1101/2025.11.17.688836v1},
+  doi     = {https://doi.org/10.1101/2025.11.17.688836}
 }
 ```
 
