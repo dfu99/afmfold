@@ -1,0 +1,51 @@
+\subsection*{Navigating \AFiii with inter-domain distance restraints}
+\label{subsec:guided-diffusion}
+
+Next, we describe a method for imposing a restraint on the generative process of \AFiii so that the CVs approach user-specified target values. 
+Specifically, while \AFiii employs an Elucidated Diffusion Model (EDM) formulation \cite{karras2022elucidating}, we compute the likelihood of the generated structure with respect to the specified CVs and add it to the original \AFiii score as a driving force that increases this likelihood. With this modified score, the generated structures become explicitly conditioned on the CVs.
+
+Let $a$ denote an amino acid sequence and $X=(x_1,\ldots,x_m)$ the 3D coordinates of all atoms, where $x_i\in\mathbb{R}^3$.
+We write $X_{t_i}$ for the state at diffusion time $t_i$ ($T > t_1 > t_2 > \dots > t_N > 0$).
+Sampling the generative process of \AFiii can be written as the stochastic EDM sampler:
+\begin{equation}
+    \begin{split}
+        &X_{t_{i+1}} = X_{t_i} - \eta (t_{i+1} - \hat{t}_i) \nabla_{X_{t_i}} \log p_{t_i}(X_{t_i} | a) + \lambda {\big(\hat{t}_i^2 - t_i^2 \big)}^{1/2} \epsilon, \\
+        &\nabla_{X_{t_i}} \log p_{t_i}(X_{t_i} | a) \approx - \bigl( X_{t_i} - \text{Denoiser}(X_{t_i} | a) \bigr) / \hat{t}_i.
+    \end{split}
+    \label{eq:af3-sde}
+\end{equation}
+Here, $\hat{t}_i$ denotes a time larger than $t_i$, defined as $\hat{t}_i = (1 + \gamma_i)t_i$, with a parameter $\gamma_i$ that is set to $0.8$ when $t_{i+1} > 1.0$, and $0$ otherwise. 
+The coefficients $\eta$ and $\lambda$ are hyperparameters called the \textit{noise scale} and \textit{step scale}, respectively, and are set to $\eta = 1.5$ and $\lambda = 1.003$. 
+$\text{Denoiser}(\cdot | a)$ represents a denoiser conditioned by coevolutionary information about $a$.
+
+Let $\phi_{\text{target}} \in \mathbb{R}^D$ denote the estimated coordinate in the CV space, where $D$ is the dimension of the CVs.
+By Bayes’ rule, the conditional score decomposes as
+\begin{equation}
+    \begin{split}
+        &\nabla_{X_t} \log p_t \bigl(X_t \big| \phi_{\text{target}}, a \bigr) \\
+        &= \nabla_{X_t} \log \pt{X_t} + \nabla_{X_t} \log \ptc{\phi_{\text{target}}}{X_t}.
+    \end{split}
+    \label{eq:score-decomp}
+\end{equation}
+
+Therefore, we can bias the stochastic sampler by adding the guidance term:
+
+\begin{equation}
+    \begin{split}
+        X_{t_{i+1}} &= X_{t_i} - \eta (t_{i+1} - \hat{t}_i) \bigl( \nabla_{X_{t_i}} \log p_{t_i}(X_{t_i} | a) \\
+        &+ \nabla_{X_{t_i}} \log p_{t_i}(\phi_{\text{target}} | X_{t_i}, a) \bigr) + \lambda {\bigl( \hat{t}_i^2 - t_i^2 \bigr)}^{1/2} \epsilon
+    \end{split}
+    \label{eq:af3-guided}
+\end{equation}
+so that the process is guided toward $\phi(X_{t_N})$ $\approx$ $\phi_{\text{target}}$, where $\phi: \R^{3m} \to \R^{D}$ is a differentiable mapping from structures to this feature space.
+
+In this work, we replace the guidance score by the gradient of a squared-error loss:
+\begin{equation}
+    \mathcal{L}_{\text{MSE}}(X) \;=\; \bigl\|\phi(X)-\phi_{\text{target}}\bigr\|_2^2,
+\end{equation}
+\begin{equation}
+    \nabla_{X_t} \log \ptc{\phi_{\text{target}}}{X_t} \approx - \eta_t \nabla_{X_t} \mathcal{L}_{\text{MSE}}(X_t),
+\end{equation}
+which is consistent with an isotropic Gaussian model $p_t \bigl( \phi_{\text{object}} $ $| X_t,a \bigr)$ $\propto$ $\exp \big( - \| \phi(X_t) - \phi_{\text{object}} \|_2^2 / ( 2 \sigma_t^2 ) \big)$, in which case $\eta_t = 1/(2\sigma_t^2)$. 
+The optimal selection of $\eta_t$ is analyzed in SI section S1. 
+%Supporting Information \Cref{app:guidance_sch}.

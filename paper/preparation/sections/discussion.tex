@@ -1,0 +1,42 @@
+\section*{Discussion}
+
+In this work, we have proposed a computational protocol, \Model, to predict the 3D conformation of biomolecules from AFM images. 
+\Model enables rapid and accurate conformation estimation compared to previous approaches.
+\Model extracts features from AFM images with a group-invariant (symmetry-aware) CNN, reducing computational cost in two ways.
+First, it reduces the amount of required training data, because symmetry-aware representations learn efficiently from limited images \cite{e2cnn}.
+Second, it shortens inference time: guiding \AFiii requires computing $\ptc{\phi_{\text{object}}}{X_t}$; replacing this with $\mathcal{L}_{\text{MSE}}(X_t)$ keeps the computational cost per structure low.
+In the estimations of this study, per-frame estimation finished within one minute on a single GPU.
+It has the potential to serve as a powerful tool for interpreting HS-AFM movies comprised of hundreds of frames in both structural and dynamic aspects.
+
+%\paragraph{Merits}
+% Candidates: Advantages, Merits, Benefits
+
+%Across our evaluations, \Model delivered competitive prediction accuracy at low computational cost.
+%Therefore, \Model can help deepen understanding of biological processes---for example, by quantifying large-scale domain rearrangements along putative pathways and by prioritizing follow-up measurements in single-molecule studies.
+
+A limitation of \Model is that it requires a priori definition of CVs as features to be estimated from the AFM image. If it is challenging to define appropriate CVs a priori, one could first perform structural sampling using methods such as AlphaFlow \cite{jing2024alphaflow}, BioEmu \cite{bioemu2025}, or \AFii with MSA subsampling \cite{delAlamo2022sampling}, and then identify meaningful CVs by applying dimensionality reduction techniques like PCA to extract important features. 
+The \Model framework is general, and as long as the chosen CVs are differentiable with respect to atomic Cartesian coordinates and can be used for guiding \AFiii, a wide variety of CV types can be incorporated. For example, although we focused on inter-domain distances as CVs in this work, other CVs, such as residue-level distance restraints, can be used to enable AFM-guided reconstruction of finer-grained motions without a significant increase in computational cost. 
+
+%\paragraph{Limitations \& Future Work}
+% Candidates: Weaknesses, Constraints, Challenges
+Another limitation of \Model is that it infers conformations from a single AFM image and currently does not quantify predictive uncertainty due to image noise or molecular orientation. 
+Extending the framework to estimate uncertainty would make the predictions easier to interpret \cite{Kendall2017Uncertainty}.
+Moreover, AFM image sequences constitute time-series data in which poses change only slightly between adjacent frames; incorporating temporal dependencies---for example, with TimeSformer \cite{Bertasius2021TimeSformer} or non-local networks \cite{Wang2018NonLocalNetworks}---could further improve fidelity.
+
+Finally, in this work we navigated \AFiii's sampling only using AFM images; consequently, neither structural stability nor explicit physical priors are incorporated. 
+In the future, conditioning the prior (such as Boltz-2's custom potentials \cite{passaro2025boltz2}) of an ensemble generative model should enable integrated modeling that unifies experimental measurements, physical priors, and computational inference. 
+
+\section*{Data availability}
+The code of \Model is publicly available at \url{http://github.com/matsunagalab/afmfold}.
+Notebooks, scripts, and datasets to reproduce the results of this paper are publicly available at Zenodo \url{https://zenodo.org/records/17597490} \cite{kawai_dataset_nodate}. 
+%HS-AFM data of \flhac are available upon reasonable request to the corresponding author and with the permission of the original authors \cite{inoue_structural_2019}. 
+
+\section*{Declaration of generative AI and AI-assisted technologies in the writing process}
+During the preparation of this work the authors used ChatGPT in order to assist with language refinement and editing. 
+After using this service, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication.
+
+\section*{Acknowledgements}
+\label{sec:acknowledgements}
+A preliminary version of this work, \url{https://doi.org/10.1101/2025.11.17.688836}, was deposited in bioRxiv on November 17, 2025.
+We appreciate Tohru Minamino (The University of Osaka) and Noriyuki Kodera (Kanazawa University) for kindly providing the experimental AFM image data used in this work. 
+This work was supported by JSPS KAKENHI (Grant number: 23H03412), and partly supported by MEXT as "Program for Promoting Researches on the Supercomputer Fugaku" (Development and application of large-scale simulation-based inferences for biomolecules JPMXP1020230119) and used computational resources of supercomputer Fugaku provided by the RIKEN Center for Computational Science (Project IDs: hp230209, hp240215, hp250233). 
