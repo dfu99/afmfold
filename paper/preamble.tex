@@ -31,10 +31,6 @@
 \Crefname{algorithm}{Alg.}{Algs.}
 \usepackage{authblk}
 
-\usepackage{csquotes}
-\usepackage[backend=biber,style=chem-acs,sorting=none,giveninits=true,doi=true,url=true]{biblatex}
-\addbibresource{citation.bib}
-
 % 定理環境
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}[section]
@@ -51,7 +47,23 @@
 % カスタムコマンド（既存）
 \input{commands}
 
-% Settings for doi and url.
+% Reference
+\usepackage{csquotes}
+\usepackage[backend=biber,
+    style=numeric,
+    sorting=none,
+    giveninits=true,
+    maxnames=10,
+    minnames=1,
+    doi=true,
+    url=true
+]{biblatex}
+
+\addbibresource{citation.bib}
+
+\DeclareDelimFormat{finalnamedelim}{\addspace and\space}
+\DeclareDelimFormat{multinamedelim}{\addcomma\space}
+
 \AtEveryBibitem{
   \iffieldundef{doi}
     {}
