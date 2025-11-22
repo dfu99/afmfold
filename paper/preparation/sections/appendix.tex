@@ -1,23 +1,16 @@
-\setcounter{section}{0}
-\renewcommand{\thesection}{S\arabic{section}}
-\setcounter{equation}{0}
-\renewcommand{\theequation}{S\arabic{equation}}
-\setcounter{figure}{0}
-\renewcommand{\thefigure}{S\arabic{figure}}
-\setcounter{table}{0}
-\renewcommand{\thetable}{S\arabic{table}}
-\setcounter{algorithm}{0}
-\renewcommand{\thealgorithm}{S\arabic{algorithm}}
+\section*{Appendices}
 
-\section{Navigating scheduling}
+\subsection*{Navigating scheduling}
 \label{app:guidance_sch}
 
 We investigated how the navigating schedule $\eta_t$ in \Cref{eq:af3-guided} affects the navigating of \AFiii structure generation. 
-The conditional generation process we used in this study is formulated as:
+The conditional generation process in \AFiii is formulated as:
 
 \begin{equation}
-    X_{t_{i+1}} = X_{t_i} - \eta (t_{i+1} - \hat{t}_i) \bigl( \nabla_{X_{t_i}} \log p_{t_i}(X_{t_i} | a) - \eta_{t_i} \nabla_{X_{t_i}} \mathcal{L}_{\text{MSE}}(X_{t_i}) \bigr) + \lambda \sqrt{\hat{t}_i^2 - t_i^2} \epsilon,
-    \label{eq:af3-guided-hatt}
+    \begin{split}
+        X_{t_{i+1}} = X_{t_i} - \eta (t_{i+1} - \hat{t}_i) \bigl( \nabla_{X_{t_i}} \log p_{t_i}(X_{t_i} | a) - \eta_{t_i} \nabla_{X_{t_i}} \mathcal{L}_{\text{MSE}}(X_{t_i}) \bigr) + \lambda \sqrt{\hat{t}_i^2 - t_i^2} \epsilon,
+        \label{eq:af3-guided-hatt}
+    \end{split}
 \end{equation}
 where $i$ propagates from $1$ to $N$ and $\eta_t$ dominates the strength of the navigation. 
 
@@ -41,7 +34,7 @@ For each setting we generated five independent conformations and computed the av
 
 \begin{equation}
     \begin{split}
-        \eta_{t_i} =
+        &\eta_{t_i} =
         \frac{y_{\text{max}}}{2}
         \frac{\| \delta \|_2}{\| g \|_2}
         \left(
@@ -49,16 +42,14 @@ For each setting we generated five independent conformations and computed the av
             \frac{\tanh\!\left( \alpha(\tau_i - \beta) / 2 \right)}
                  {\tanh\!\left( \alpha\beta / 2 \right)}
         \right),
-        \qquad
-        \tau_i = \frac{i / N - \tau_{\text{start}}}{1 - \tau_{\text{start}}},
+        \\
+        &\tau_i = \frac{i / N - \tau_{\text{start}}}{1 - \tau_{\text{start}}},
         \\[1.5ex]
-        \delta = \nabla_{X_{t_i}}\log p_{t_i}(X_{t_i}),
+        &\delta = \nabla_{X_{t_i}}\log p_{t_i}(X_{t_i}),
         \quad
         g = - \nabla_{X_{t_i}} \mathcal{L}_{\text{MSE}}(X_{t_i}),
-        \quad
-        \alpha = 10.0,
-        \quad
-        \beta = 0.5.
+        \\
+        &\alpha = 10.0, \quad \beta = 0.5.
         \label{eq:sigmoid}
     \end{split}
 \end{equation}
@@ -66,31 +57,27 @@ For each setting we generated five independent conformations and computed the av
 \paragraph{Systems and collective variables}
 Here, we describe the choice of protein system and the collective variables (CVs) on which restraints are applied.  
 The way restraints are imposed can in principle depend on factors such as protein size or the specific CVs chosen, 
-but our goal is to provide a concrete reference point that can serve as a guideline when users consider how to set the guidance strength.  
+but our goal is to provide a concrete reference point that can serve as a guideline when users consider how to set the navigation strength.  
 
-In this experiments, we investigated the relationship between the guidance strength and the physical plausibility of the generated structures for both \AK (214 residues) and \flhac (346 residues).
-The choice of CVs used for applying the guidance followed the same setup as in the main part---that is, LID–CORE, CORE–AMPbd, and AMPbd–LID for \AK, and \acdi–\acdiv and \acdii–\acdiii for \flhac.
-As a reference, under guidance-free conditions, \AFiii predicts structures with inter-domain distances of $(2.85\,\mathrm{nm},\,2.19\,\mathrm{nm},\,3.45\,\mathrm{nm})$ for \AK, and $(3.47\,\mathrm{nm},\,4.38,\mathrm{nm})$ for \flhac.
+In this experiments, we investigated the relationship between the navigation strength and the physical plausibility of the generated structures for both \AK (214 residues) and \flhac (346 residues).
+The choice of CVs used for applying the navigation was, for \AK, LID–CORE, CORE–AMPbd, and AMPbd–LID, and for \flhac, \acdi–\acdiv and \acdii–\acdiii.
+As a reference, under navigation-free conditions, \AFiii predicts structures with inter-domain distances of $(2.85~\mathrm{nm},$ $2.19~\mathrm{nm},$ $3.45~\mathrm{nm})$ for \AK, and $(3.47~\mathrm{nm},$ $4.38~\mathrm{nm})$ for \flhac.
 We conducted two types of experiments for these proteins:
-(i) \textbf{in-distribution targets}, which correspond to physically plausible inter-domain distances observed in MD simulations. Specifically, $(2.41\,\mathrm{nm},\,2.01,\mathrm{nm},\,2.68,\mathrm{nm})$ was chosen for \AK and $(2.5\,\mathrm{nm},\,4.5\,\mathrm{nm})$ for \flhac.
-(ii) \textbf{out-of-distribution targets}, which represent physically implausible inter-domain distances not observed in MD simulations. In this case, $(1.21\,\mathrm{nm},\,1.51,\mathrm{nm},\,0.53,\mathrm{nm})$ was chosen for \AK and $(2.0\,\mathrm{nm},\,3.0,\mathrm{nm})$ for \flhac.
-
+(i) \textbf{in-distribution targets}, which correspond to physically plausible inter-domain distances observed in MD simulations. Specifically, $(2.41~\mathrm{nm},$ $2.01~\mathrm{nm},$$2.68~\mathrm{nm})$ was chosen for \AK and $(2.5~\mathrm{nm},$$4.5~\mathrm{nm})$ for \flhac.
+(ii) \textbf{out-of-distribution targets}, which represent physically implausible inter-domain distances not observed in MD simulations. In this case, $(1.21~\mathrm{nm},$$1.51~\mathrm{nm},$$0.53~\mathrm{nm})$ was chosen for \AK and $(2.0~\mathrm{nm},$$3.0~\mathrm{nm})$ for \flhac.
 
 
 %\subsection{Results}
 %\label{app:guidance_results}
 
-Across both the in-distribution and out-of-distribution targets, three clear patterns emerge.  
+\paragraph{Results}
+A close examination of the MSE and MolProbity-score landscapes for each scheduling setting reveals that, for both the in-distribution and out-of-distribution targets, the two landscapes exhibit clearly distinct behaviors. 
+Notably, in the lower-left region of the parameter space, the relationship between the two metrics does not follow the simple rule that high MSE corresponds to low MolProbity-score (or vice versa). 
+Instead, when the navigation is initiated early (small $\tau_{\text{start}}$) and the maximum guidance strength is kept low (small $y_{\text{max}}$), both the MSE and the MolProbity-score tend to take low values. 
+This indicates the presence of a regime in which constraints can be applied without substantially degrading the geometric quality of the generated structures.
+Based on these observations, in our study we adopt $\tau_{\text{start}}=0.6$ and $y_{\text{max}}=0.6$ that allow effective navigation without substantially degrading structural quality.
 
-\begin{itemize}
-    \item First, there is a dividing line in the MSE landscape, approximately connecting $(\tau_{\text{start}}, y_{\text{max}})=(0.65,\,0.60)$ and $(0.73,\,1.60)$ (see  \Cref{fig:guidance_scheduling_ak} (b, h) and \Cref{fig:guidance_scheduling_flhac} (b, h)).
-        On the right side of this line (i.e., with later $\tau_{\text{start}}$ and smaller $y_{\text{max}}$), the MSE between the target CVs and the generated conformation's CVs rises sharply. 
-    \item Second, the MolProbity-score contours are roughly circular, centered near $(\tau_{\text{start}}, y_{\text{max}})=(0.40,\,1.60)$, rather than linear (see \Cref{fig:guidance_scheduling_ak} (a, g) and \Cref{fig:guidance_scheduling_flhac} (a, g)).
-    \item Third, combining these two observations, we find that starting the guidance early (small $\tau_{\text{start}}$) and keeping the restraint weak (low $y_{\text{max}}$) enables the application of constraints 
-        without substantially compromising the physical plausibility of the generated structures.
-\end{itemize}
-
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.9\linewidth]{images/figures-06.png}
     \caption{
@@ -128,15 +115,7 @@ Across both the in-distribution and out-of-distribution targets, three clear pat
     \label{fig:guidance_scheduling_flhac}
 \end{figure}
 
-%\subsection{Conclusion}
-Overall, we observed the expected trade-off: stronger guidance improves agreement with the target, but tends to degrade structural plausibility. 
-At the same time, we obtained an additional insight: rather than applying strong restraints only in the final stages of the reverse process, it is more effective to apply weak restraints from the early stages.  
-In fact, regions with low MSE consistently appear in the area of $\hat{t}_{\text{start}} \lessapprox 0.6$ (see \Cref{fig:guidance_scheduling_ak} (b,h) and \Cref{fig:guidance_scheduling_flhac} (b,h)), 
-and among them, regions with low MolProbity scores are located where $\hat{y}_{\text{max}}$ is relatively small (see \Cref{fig:guidance_scheduling_ak} (a,g) and \Cref{fig:guidance_scheduling_flhac} (a,g)).
-
-Based on these observations, in our study we adopt $\hat{t}_{\text{start}}=0.6$ and $y_{\text{max}}=0.6$ that allow effective guidance without substantially degrading structural quality.
-
-\section{Model Implementation Details}
+\subsection*{Model Implementation Details}
 \label{app:additional_alg}
 
 \begin{algorithm}[H]
@@ -153,11 +132,14 @@ $N_{\text{hidden-layers}} = 3$, $D_{\text{hidden}} = 64$, $D_{\text{out}} = N_{\
     \State $I \gets \mathrm{R2Conv}(I;\, \text{in}=\mathrm{channels}[i-1]\!\cdot N,\, \text{out}=\mathrm{channels}[i]\!\cdot N,\, k=\mathrm{kernel\_size}[i])$
     \State $I \gets \mathrm{InnerBatchNorm}(I) \to \mathrm{ReLU}(I)$
     \If{$i \bmod 2 = 0$}
-        \State $I \gets \mathrm{PointwiseAvgPoolAntialiased}\!\left(I;\, \sigma=0.66,\, \mathrm{stride}=
+        \State $I \gets \mathrm{PointwiseAvgPoolAntialiased}\!\left(I;\sigma,\,s\right)$
+        \State $\text{where}\quad
+        \sigma=0.66, \quad
+        s=
         \begin{cases}
         2 & \text{if size odd}\\
         1 & \text{if size even}
-        \end{cases}\right)$
+        \end{cases}$
     \EndIf
 \EndFor
 
@@ -172,36 +154,3 @@ $N_{\text{hidden-layers}} = 3$, $D_{\text{hidden}} = 64$, $D_{\text{out}} = N_{\
 \State \Return $\mathbf{D}$
 \end{algorithmic}
 \end{algorithm}
-
-%\section{Supporting figures}
-%\label{app:additional_fig}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\linewidth]{images/figures-09.png}
-    \caption{
-        \textbf{Selected candidate conformations for \AK and MolProbity evaluation for them}.
-        \textbf{(a)} Projection of the candidate conformations into the inter-domain distance space. 
-        The following panels shows
-        \textbf{(b)} MolProbity score,
-        \textbf{(c)} Clash score,
-        \textbf{(d)} Ramachandran favored rate (\%), and
-        \textbf{(e)} Rotamer outlier rate (\%) of the candidate conformations.
-        }
-    \label{fig:ak_selection}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\linewidth]{images/figures-10.png}
-    \caption{
-        \textbf{Selected candidate conformations for \flhac and MolProbity evaluation for them}.
-        \textbf{(a)} Projection of the candidate conformations into the inter-domain distance space. 
-        The following panels shows
-        \textbf{(b)} MolProbity score, 
-        \textbf{(c)} Clash score,
-        \textbf{(d)} Ramachandran favored rate (\%), and
-        \textbf{(e)} Rotamer outlier rate (\%) of the candidate conformations.
-        }
-    \label{fig:flhac_selection}
-\end{figure}

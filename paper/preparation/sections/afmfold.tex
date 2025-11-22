@@ -24,9 +24,9 @@ To do this, first, we obtain a reference structure $X_{\text{ref}}$ with \AFiii 
 Then, target CV vectors $\{\phi_{\text{perturb}}^{\,i}\}$ are placed on a grid around $\phi(X_{\text{ref}})$ such that, for each dimension $i$,
 \begin{equation}
     \begin{split}
-        &\phi_{\text{perturb},d}^i \\
-        &\in \left[ \min(0.0~\mathrm{nm}, \phi^i(X_{\text{ref}}) - 5.0~\mathrm{nm}), \phi^i(X_{\text{ref}}) + 5.0~\mathrm{nm} \right].
-        \label{eq:target_domain_distance}
+    &\phi_{\text{perturb},d}^i \\
+    &\in \left[ \min(0.0~\mathrm{nm}, \phi^i(X_{\text{ref}}) - 5.0~\mathrm{nm}), \phi^i(X_{\text{ref}}) + 5.0~\mathrm{nm} \right].
+    \label{eq:target_domain_distance}
     \end{split}
 \end{equation}
 The grid used a step of $0.5~\mathrm{nm}$ for each axis. Then, the generation with \AFiii is conducted using each $\{\phi_{\text{perturb}}^{\,i}\}$ as the restraints for the navigating process.
@@ -47,48 +47,9 @@ we applied thresholds to perform geometric sanitization, based on MolProbity sco
 This procedure constrains the \gcnn to perform inference within a conformational space devoid of geometric violations. The resulting set that passes this sanitization serves as 
 a training set for training the \gcnn and for synthesizing pseudo-AFM images used in training.
 
-\begin{table}[hbt!]
-    \centering
-    \caption{MolProbity score thresholds used for geometric sanitization.}
-    \label{tab:score_thresholds}
-    \begin{tabular}{|l|c|}
-        \hline
-        Criterion & Threshold \\
-        \hline
-        MolProbity Score & $\leq 4.0$ \\
-        Clash Score & $\leq 70.0$ \\
-        Ramachandran favored (\%) & $\geq 90.0$ \\
-        Rotamer Outlier (\%) & $\leq 50.0$ \\
-        \hline
-    \end{tabular}
-\end{table}
-
 \paragraph{Pseudo-AFM image rendering.}
 
 In rendering the pseudo-AFM, we used the morphology functions implemented in our previous work \cite{matsunaga2023endtoend}. The specific parameter settings are summarized in \Cref{tab:afm_settings}. It should be noted that for the test case of \AK, we used smaller values for the tip radius and finer resolution of pseudo-AFM images compared to typical experimental conditions. On the other hand, for \flhac, since the precise tip geometry is unknown in experiments, the probe radius $r$ was sampled uniformly within a range. Moreover, the height distribution of pseudo-AFM images was fitted to the real experimental images using \verb|skimage.exposure.match_histograms|. For both \AK and \flhac, we used the inter-domain distances (distances between the centers of mass of C$\alpha$ atoms in the domains) as the CVs.
-
-\begin{table}[hbt!]
-    \centering
-    \caption{Settings for training pseudo-AFM images.}
-    \label{tab:afm_settings}
-    \begin{tabular}{|l|c|c|}
-        \hline
-         & \AK & \flhac \\
-        \hline
-        Lateral resolution [nm/pixel] & 0.3 & 0.98 \\
-        Pixel size [pixel $\times$ pixel] & $35 \times 35$ & $35 \times 35$ \\
-        Tip radius [nm] & $r \sim \mathrm{Uniform}(0.3,0.6)$ & $r \sim \mathrm{Uniform}(2.0,6.0)$ \\
-        Tip apex angle [degree] & $a \sim \mathrm{Uniform}(10,30)$ & $a \sim \mathrm{Uniform}(10,30)$ \\
-        Noise std. dev. [nm] & 0.0 & 0.5 \\
-        Histogram matching & --- & \checkmark \\
-        Dataset size [frames] & 5M & 5M \\
-        Collective variables & Inter-domain distances & Inter-domain distances \\
-                             & (LID-CORE, CORE-AMPbd, & (\acdi-\acdiv, \acdii-\acdiii, \\
-                             & AMPbd-LID)  & \acdii-\acdiv)  \\
-        \hline
-    \end{tabular}
-\end{table}
-
 
 \subsubsection*{Training}
 \label{subsubsec:afm-training}
@@ -99,7 +60,7 @@ As the most straightforward loss function for supervised regression, we adopted 
     \mathcal{L}_{\text{CNN}} = \mathrm{Mean}_{i} \| \phi_{\text{pred}}(I_i) - \phi_{\text{true}}(I_i) \|^2,
     \label{eq:cnn-mse-loss}
 \end{equation}
-where $I_i$ denotes the $i$-th input pseudo-AFM image, $\phi_{\text{pred}}(I_i)$ is the CV values predicted by the g-CNN, and $\phi_{\text{true}}(I_i)$ is the corresponding ground-truth CV values. As the g-CNN architecture, we implemented a $(\mathbb{R}^2, +) \rtimes C_8$-invariant CNN (see SI section S2 for the implementation details).
+where $I_i$ denotes the $i$-th input pseudo-AFM image, $\phi_{\text{pred}}(I_i)$ is the CV values predicted by the g-CNN, and $\phi_{\text{true}}(I_i)$ is the corresponding ground-truth CV values. As the g-CNN architecture, we implemented a $(\mathbb{R}^2, +) \rtimes C_8$-invariant CNN (see \Cref{alg:cnscnn} for the implementation details).
 
 All models in this paper were trained on a single node equipped with an NVIDIA RTX A6000 GPU (48~GB memory). The training took approximately 2--3 days for both \AK and \flhac. 
 
