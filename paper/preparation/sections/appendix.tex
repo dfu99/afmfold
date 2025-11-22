@@ -8,7 +8,7 @@ The conditional generation process in \AFiii is formulated as:
 
 \begin{equation}
     \begin{split}
-        X_{t_{i+1}} = X_{t_i} - \eta (t_{i+1} - \hat{t}_i) \bigl( \nabla_{X_{t_i}} \log p_{t_i}(X_{t_i} | a) - \eta_{t_i} \nabla_{X_{t_i}} \mathcal{L}_{\text{MSE}}(X_{t_i}) \bigr) + \lambda \sqrt{\hat{t}_i^2 - t_i^2} \epsilon,
+        X_{t_{i+1}} = X_{t_i} - \eta (t_{i+1} - \hat{t}_i) \bigl( \nabla_{X_{t_i}} \log p_{t_i}(X_{t_i} | a) - \eta_{t_i} \nabla_{X_{t_i}} \mathcal{L}_{\text{MSE}}(X_{t_i}) \bigr) + \lambda \bigl({\hat{t}_i^2 - t_i^2}\bigr)^{1/2} \epsilon,
         \label{eq:af3-guided-hatt}
     \end{split}
 \end{equation}
