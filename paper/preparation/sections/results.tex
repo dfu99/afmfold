@@ -77,7 +77,7 @@ we systematically varied the noise levels added to both the training and the ``e
 \label{subsec:flhac_results}
 
 FlhA is a key component of the flagellar protein export system, and its C-terminal domain, \flhac, helps transport proteins by assisting their binding to the exporter. 
-Structurally, it comprises four domains (\acdi, \acdii, \acdiii, and \acdiv) and a linker to the transmembrane domain (FlhA\textsubscript{TM}) (\Cref{fig:flhac_statistic}~(a)). 
+Structurally, it comprises four domains (\acdi, \acdii, \acdiii, and \acdiv) and a linker to the transmembrane domain (FlhA\textsubscript{TM}) (\Cref{fig:flhac_results}~(a)). 
 Previous studies using X-ray crystallography and mutational analysis indicate that hinge motions among these domains influence transport activity and motility \cite{saijo-hamano2010flha}. 
 %Here, we applied \Model to real experimental AFM images of \flhac to evaluate its ability to reconstruct the 3D structure of \flhac from AFM images. 
 
@@ -152,7 +152,7 @@ Importantly, this temporal pattern suggests the presence of time correlation in 
 
 The temporal correlation of the inter-domain distances was quantified by the auto-correlation function (\Cref{fig:flhac_statistic}~(d)).
 The solid lines show the auto-correlations from \Model estimations, while the dashed lines show the auto-correlations from temporally shuffled surrogate data (i.e., the frame order of the inter-domain distances time-series is shuffled). 
-In particular, the auto-correlation for the temporally shuffled data remains low (within ±0.2) across all lag times, indicating little to no time correlation as expected for randomly ordered data. In contrast, the auto-correlation for the \Model estimations shows a pronounced positive correlation for lag times up to 5.0 ms and exhibits larger negative values for lag times beyond 15 ms, resulting in oscillatory behavior. 
+In particular, the auto-correlation for the temporally shuffled data remains low (within ±0.2) across all lag times, indicating little to no time correlation as expected for randomly ordered data. In contrast, the auto-correlation for the \Model estimations shows a pronounced positive correlation for lag times up to 5.0 ms and exhibits larger negative values for lag times beyond 10 ms, resulting in oscillatory behavior. 
 Overall, these results demonstrate that \Model is effective for capturing the molecular conformational dynamics from the time-series of HS-AFM images. 
 %This pattern suggests that the estimated structures from \Model not only retain temporal continuity but may also capture underlying dynamic fluctuations in the molecular conformation.
 
