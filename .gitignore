@@ -1,6 +1,11 @@
 # Results
 results.zip
 results/
+release_data/
+out/
+
+# Mac
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
