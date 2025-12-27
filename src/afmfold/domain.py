@@ -18,6 +18,11 @@ FLHAC_DOMAINS = {
     r"A$_C$D$_4$": np.load(DOMAIN_DIR / "flhac/acd4.npy"),
 }
 
+INTEGRIN_DOMAINS = {
+    "alpha": np.load(DOMAIN_DIR / "integrin/chain_a.npy"),
+    "beta": np.load(DOMAIN_DIR / "integrin/chain_b.npy"),
+}
+
 def get_domain_pair_names(protein_name="4ake"):
     if protein_name.lower() in ["3a5i", "flhac"]:
         domain_pair_names = [
@@ -31,6 +36,11 @@ def get_domain_pair_names(protein_name="4ake"):
             ("ATPbd", "Core"),
             ("Core", "AMPbd"),
             ("AMPbd", "ATPbd"),
+        ]
+
+    elif protein_name.lower() in ["4g1e", "integrin"]:
+        domain_pair_names = [
+            ("alpha", "beta"),
         ]
     
     else:
@@ -49,6 +59,12 @@ def get_domain_pairs(protein_name="4ake"):
     elif protein_name.lower() in ["1ake", "4ake", "ak"]:
         domain_pairs = [
             (AK_DOMAINS[name1], AK_DOMAINS[name2])
+            for name1, name2 in domain_pair_names
+        ]
+
+    elif protein_name.lower() in ["4g1e", "integrin"]:
+        domain_pairs = [
+            (INTEGRIN_DOMAINS[name1], INTEGRIN_DOMAINS[name2])
             for name1, name2 in domain_pair_names
         ]
     

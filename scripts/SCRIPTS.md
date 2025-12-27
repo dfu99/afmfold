@@ -2,6 +2,18 @@
 In AFM-Fold, a CNN is trained to learn the correspondence between AFM images and the collective variables (CVs) of the underlying structures.
 The following code examples illustrate how to generate noiseless training data from MD conformations of Adenylate Kinase (with labels of inter-domain distances), and then train the CNN.
 
+0. **Prepare jsons**
+
+    ```bash
+    # 1. Convert your reference PDB into a Protenix JSON stub.
+    afmfold tojson --input ./storage/4ake.pdb --out_dir ./storage
+    # This writes ./storage/4ake-without-msa.json
+
+    # 2. Populate that stub with MSA hits (colabfold-style).
+    afmfold msa --input ./storage/4ake-without-msa.json --out_dir ./storage
+    # This writes ./storage/4ake-with-msa.json
+    ```
+
 1. **Prepare a candidate conformation set** using [generate_candidates.py](generate_candidates.py). 
     
     ```bash
@@ -12,7 +24,7 @@ The following code examples illustrate how to generate noiseless training data f
     nohup python scripts/generate_candidates.py \
         --native-pdb storage/ak.pdb \
         --name 4ake \
-        --json-path ./storage/4ake-with-msa.json \
+        --json-file ./storage/4ake-with-msa.json \
         --out-dir data/candidates/ \
         > candidates.log 2>&1 &
 
