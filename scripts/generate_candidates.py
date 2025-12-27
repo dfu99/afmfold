@@ -101,6 +101,16 @@ if __name__ == "__main__":
     parser.add_argument('--max-trial', type=int, default=1, help='Maximum trials per grid point')
     args = parser.parse_args()
     
+    print(
+        f"\nGenerating candidates with parameters:\n"
+        f"  native_pdb   : {args.native_pdb}\n"
+        f"  name         : {args.name}\n"
+        f"  json_file    : {args.json_file}\n"
+        f"  out_dir      : {args.out_dir}\n"
+        f"  max_deviation: {args.max_deviation}\n"
+        f"  grid_size    : {args.grid_size}\n"
+        f"  max_trial    : {args.max_trial}\n"
+    )
     make_candidates(
         args.native_pdb,
         args.name,
