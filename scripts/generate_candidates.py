@@ -20,6 +20,7 @@ def make_candidates(
     json_file=BASE_DIR / "storage" / "3a5i.json",
     r_neighbors=2,
     min_trial=20,
+    max_trial=1,
     delete_failed_cifs=True,
     ):
     # Initializations.
@@ -74,6 +75,7 @@ def make_candidates(
             name=name,
             json_file=str(json_file),
             input_dict={},
+            max_trial=max_trial,
             )
         
         if len(successful_cif_list) > 0:
@@ -94,6 +96,17 @@ if __name__ == "__main__":
     parser.add_argument('--name', type=str, required=True, help='Name of the protein')
     parser.add_argument('--json-file', type=str, required=True, help='Json path')
     parser.add_argument('--out-dir', type=str, required=True, help='Output dir')
+    parser.add_argument('--max-deviation', type=float, default=5.0, help='Maximum deviation in Angstrom')
+    parser.add_argument('--grid-size', type=float, default=5.0, help='Grid size in Angstrom')
+    parser.add_argument('--max-trial', type=int, default=1, help='Maximum trials per grid point')
     args = parser.parse_args()
     
-    make_candidates(args.native_pdb, args.name, out_dir=args.out_dir, json_file=args.json_file)
+    make_candidates(
+        args.native_pdb,
+        args.name,
+        out_dir=args.out_dir,
+        json_file=args.json_file,
+        max_deviation=args.max_deviation,
+        grid_size=args.grid_size,
+        max_trial=args.max_trial,
+    )
