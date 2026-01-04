@@ -21,6 +21,12 @@ FLHAC_DOMAINS = {
 INTEGRIN_DOMAINS = {
     "alpha": np.load(DOMAIN_DIR / "integrin/chain_a.npy"),
     "beta": np.load(DOMAIN_DIR / "integrin/chain_b.npy"),
+    "alpha_head_thigh": np.load(DOMAIN_DIR / "integrin/alpha_head_thigh.npy"),
+    "alpha_calf": np.load(DOMAIN_DIR / "integrin/alpha_calf.npy"),
+    "alpha_coil": np.load(DOMAIN_DIR / "integrin/alpha_coil.npy"),
+    "beta_head_hybrid_egf1": np.load(DOMAIN_DIR / "integrin/beta_head_hybrid_egf1.npy"),
+    "beta_tail_egf2_3_4_btail": np.load(DOMAIN_DIR / "integrin/beta_tail_egf2_3_4_btail.npy"),
+    "beta_coil": np.load(DOMAIN_DIR / "integrin/beta_coil.npy"),
 }
 
 def get_domain_pair_names(protein_name="4ake"):
@@ -40,7 +46,11 @@ def get_domain_pair_names(protein_name="4ake"):
 
     elif protein_name.lower() in ["4g1e", "integrin"]:
         domain_pair_names = [
-            ("alpha", "beta"),
+            ("alpha_head_thigh", "alpha_calf"),
+            ("alpha_calf", "alpha_coil"),
+            ("beta_head_hybrid_egf1", "beta_tail_egf2_3_4_btail"),
+            ("beta_tail_egf2_3_4_btail", "beta_coil"),
+            ("alpha_head_thigh", "beta_head_hybrid_egf1"),
         ]
     
     else:
