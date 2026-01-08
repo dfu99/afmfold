@@ -3,6 +3,7 @@ results.zip
 results/
 release_data/
 out/
+data/
 
 # Mac
 .DS_Store

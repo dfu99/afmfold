@@ -1,0 +1,553 @@
+[
+    {
+        "sequences": [
+            {
+                "proteinChain": {
+                    "sequence": "FNLDVDSPAEYSGPEGSYFGFAVDFFVPSASSRMFLLVGAPKANTTQPGIVEGGQVLKCDWSSTRRCQPIEFDATGNRDYAKDDPLEFKSHQWFGASVRSKQDKILACAPLYHWRTEMKQEREPVGTCFLQDGTKTVEYAPCRSQDIDADGQGFCQGGFSIDFTKADRVLLGGPGSFYWQGQLISDQVAEIVSKYDPNVYSIKYNNQLATRTAQAIFDDSYLGYSVAVGDFNGDGIDDFVSGVPRAARTLGMVYIYDGKNMSSLYNFTGEQMAAYFGFSVAATDINGDDYADVFIGAPLFMDRGSDGKLQEVGQVSVSLQRASGDFQTTKLNGFEVFARFGSAIAPLGDLDQDGFNDIAIAAPYGGEDKKGIVYIFNGRSTGLNAVPSQILEGQWAARSMPPSFGYSMKGATDIDKNGYPDLIVGAFGVDRAILYRARPVITVNAGLEVYPSILNQDNKTCSLPGTALKVSCFNVRFCLKADGKGVLPRKLNFQVELLLDKLKQKGAIRRALFLYSRSPSHSKNMTISRGGLMQCEELIAYLRDESEFRDKLTPITIFMEYRLDYRTAADTTGLQPILNQFTPANISRQAHILLDCGEDNVCKPKLEVSVDSDQKKIYIDDNPLTLIVKAQNQGEGAYEAELIVSIPLQADFIGVVRNNEALARLSCAFKTENQTRQVVCDLGNPMKAGTQLLAGLRFSVHQQSEMDTSVKFDLQIQSSNLFDKVSPVVSHKVDLAVLAAVEIRGVSSPDHVFLPIPNWEHKENPETEEDVGPVVQHIYELRNNGPSSFSKAMLHLQWPYKYNNNTLLYILHYDIDGPMNCTSDMEINPLRIKISSLTEKNDTVAGDIHTLGCGVAQCLKIVCQVGRLDRGKSAILYVKSLLWTETFMNKENQNHSYSLKSSASFNVIEFPYKNLPIEDITNSTLVTTNVTWGIQPAPCEKELQALEKENAQLEWELQALEKEL",
+                    "count": 1
+                }
+            },
+            {
+                "proteinChain": {
+                    "sequence": "GPNICTTRGVSSCQQCLAVSPMCAWCSDEALPLPRCDLKENLLKDNCAPESIEFPVSEARVLEDRPLSDKGSGDSSQVTQVSPQRIALRLRPDDSKNFSIQVRQVEDYPVDIYYLMDLSYSMKDDLWSIQNLGTKLATQMRKLTSNLRIGFGAFVDKPVSPYMYISPPEALENPCYDMKTTCLPMFGYKHVLTLTDQVTRFNEEVKKQSVSRNRDAPEGGFDAIMQATVCDEKIGWRNDASHLLVFTTDAKTHIALDGRLAGIVQPNDGQCHVGSDNHYSASTTMDYPSLGLMTEKLSQKNINLIFAVTENVVNLYQNYSELIPGTTVGVLSMDSSNVLQLIVDAYGKIRSKVELEVRDLPEELSLSFNATCLNNEVIPGLKSCMGLKIGDTVSFSIEAKVRGCPQEKEKSFTIKPVGFKDSLIVQVTFDCDCACQAQAEPNSHRCNNGNGTFECGVCRCGPGWLGSQCECSEEDYQDECSPREGQPVCSQRGECLCGQCVCHSSDFGKITGKYCECDDFSCVRYKGEMCSGHGQCSCGDCLCDSDWTGYYCNCTTRTDTCMSSNGLLCSGRGKCECGSCVCIQPGSYGDTCEKCPTCPDACTFKKECVECKKFDRGALHDENTCNRYCRDEIESVKELKDTGKDAVNCTYKNEDDCVVRFQYYEDSSGKSILYVVEEPECPKGPAQCKKKLQALKKKNAQLKWKLQAL",
+                    "count": 1
+                }
+            },
+            {
+                "ligand": {
+                    "ligand": "CCD_NAG",
+                    "count": 28
+                }
+            },
+            {
+                "ligand": {
+                    "ligand": "CCD_BMA",
+                    "count": 9
+                }
+            },
+            {
+                "ligand": {
+                    "ligand": "CCD_MAN",
+                    "count": 12
+                }
+            },
+            {
+                "ligand": {
+                    "ligand": "CCD_CA",
+                    "count": 6
+                }
+            },
+            {
+                "ligand": {
+                    "ligand": "CCD_SO4",
+                    "count": 6
+                }
+            },
+            {
+                "ligand": {
+                    "ligand": "CCD_CL",
+                    "count": 7
+                }
+            },
+            {
+                "ligand": {
+                    "ligand": "CCD_NI",
+                    "count": 1
+                }
+            }
+        ],
+        "covalent_bonds": [
+            {
+                "entity1": 1,
+                "position1": 44,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 1
+            },
+            {
+                "entity1": 1,
+                "position1": 260,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 3
+            },
+            {
+                "entity1": 1,
+                "position1": 266,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 5
+            },
+            {
+                "entity1": 1,
+                "position1": 458,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 7
+            },
+            {
+                "entity1": 1,
+                "position1": 524,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 27
+            },
+            {
+                "entity1": 1,
+                "position1": 585,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 9
+            },
+            {
+                "entity1": 1,
+                "position1": 820,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 11
+            },
+            {
+                "entity1": 1,
+                "position1": 841,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 13
+            },
+            {
+                "entity1": 1,
+                "position1": 922,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 15
+            },
+            {
+                "entity1": 1,
+                "position1": 929,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 28
+            },
+            {
+                "entity1": 2,
+                "position1": 97,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 17
+            },
+            {
+                "entity1": 2,
+                "position1": 318,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 19
+            },
+            {
+                "entity1": 2,
+                "position1": 369,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 21
+            },
+            {
+                "entity1": 2,
+                "position1": 553,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 23
+            },
+            {
+                "entity1": 2,
+                "position1": 648,
+                "atom1": "ND2",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 25
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 1,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 2
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 3,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 4
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 5,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 6
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 7,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 8
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 9,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 10
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 11,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 12
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 13,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 14
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 15,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 16
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 17,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 18
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 19,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 20
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 21,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 22
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 23,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 24
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 25,
+                "entity2": 3,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 26
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 2,
+                "entity2": 4,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 1
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 4,
+                "entity2": 4,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 2
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 6,
+                "entity2": 4,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 3
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 8,
+                "entity2": 4,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 4
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 12,
+                "entity2": 4,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 5
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 14,
+                "entity2": 4,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 6
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 22,
+                "entity2": 4,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 7
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 24,
+                "entity2": 4,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 8
+            },
+            {
+                "entity1": 3,
+                "position1": 1,
+                "atom1": "O4",
+                "copy1": 26,
+                "entity2": 4,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 9
+            },
+            {
+                "entity1": 4,
+                "position1": 1,
+                "atom1": "O6",
+                "copy1": 1,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 1
+            },
+            {
+                "entity1": 4,
+                "position1": 1,
+                "atom1": "O6",
+                "copy1": 3,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 2
+            },
+            {
+                "entity1": 4,
+                "position1": 1,
+                "atom1": "O6",
+                "copy1": 6,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 8
+            },
+            {
+                "entity1": 4,
+                "position1": 1,
+                "atom1": "O6",
+                "copy1": 7,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 11
+            },
+            {
+                "entity1": 4,
+                "position1": 1,
+                "atom1": "O6",
+                "copy1": 9,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 12
+            },
+            {
+                "entity1": 4,
+                "position1": 1,
+                "atom1": "O3",
+                "copy1": 3,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 5
+            },
+            {
+                "entity1": 4,
+                "position1": 1,
+                "atom1": "O3",
+                "copy1": 4,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 7
+            },
+            {
+                "entity1": 4,
+                "position1": 1,
+                "atom1": "O3",
+                "copy1": 6,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 10
+            },
+            {
+                "entity1": 5,
+                "position1": 1,
+                "atom1": "O3",
+                "copy1": 2,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 3
+            },
+            {
+                "entity1": 5,
+                "position1": 1,
+                "atom1": "O3",
+                "copy1": 5,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 6
+            },
+            {
+                "entity1": 5,
+                "position1": 1,
+                "atom1": "O3",
+                "copy1": 8,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 9
+            },
+            {
+                "entity1": 5,
+                "position1": 1,
+                "atom1": "O2",
+                "copy1": 3,
+                "entity2": 5,
+                "position2": 1,
+                "atom2": "C1",
+                "copy2": 4
+            }
+        ],
+        "name": "4G1E"
+    }
+]
