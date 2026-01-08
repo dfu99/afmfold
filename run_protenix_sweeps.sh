@@ -23,7 +23,7 @@ for SHARD_ID in $(seq 0 $((NUM_SHARDS - 1))); do
     continue
   fi
   SEED_LIST=$(IFS=,; echo "${CHUNK[*]}")
-  sbatch protenix_sweep.sh \
+  sbatch -- protenix_sweep.sh \
     "$JSON_FILE" \
     "$OUT_DIR" \
     "$BC_PDB" \
