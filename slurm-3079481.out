@@ -1,29 +1,0 @@
----------------------------------------
-Begin Slurm Prolog: Dec-27-2025 15:40:56
-Job ID:    3079481
-User ID:   dfu71
-Account:   gts-yke8
-Job name:  afmfold_gen
-Partition: gpu-a100
-QOS:       inferno
----------------------------------------
-/storage/scratch1/6/dfu71/venv_afmfold/lib/python3.12/site-packages/mdtraj/geometry/order.py:25: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
-  from pkg_resources import parse_version
-/storage/scratch1/6/dfu71/venv_afmfold/lib/python3.12/site-packages/torch/cuda/__init__.py:56: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
-  import pynvml  # type: ignore[import]
-Try to find the ccd cache data in the code directory for inference.
-srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
-slurmstepd: error: *** JOB 3079481 ON atl1-1-01-006-3-0 CANCELLED AT 2025-12-28T01:41:01 DUE TO TIME LIMIT ***
-  0%|          | 0/16 [00:00<?, ?it/s]  6%|▋         | 1/16 [32:08<8:02:04, 1928.27s/it] 12%|█▎        | 2/16 [1:03:53<7:26:42, 1914.46s/it] 19%|█▉        | 3/16 [1:35:45<6:54:34, 1913.43s/it] 25%|██▌       | 4/16 [2:39:14<8:52:24, 2662.04s/it] 31%|███▏      | 5/16 [3:43:05<9:25:16, 3083.33s/it] 38%|███▊      | 6/16 [4:46:53<9:16:05, 3336.60s/it] 44%|████▍     | 7/16 [5:50:30<8:44:02, 3493.58s/it] 50%|█████     | 8/16 [7:25:58<9:20:40, 4205.09s/it] 56%|█████▋    | 9/16 [9:01:43<9:06:45, 4686.51s/it]slurmstepd: error: *** STEP 3079481.0 ON atl1-1-01-006-3-0 CANCELLED AT 2025-12-28T01:41:01 DUE TO TIME LIMIT ***
----------------------------------------
-Begin Slurm Epilog: Dec-28-2025 01:41:05
-Job ID:        3079481
-User ID:       dfu71
-Account:       gts-yke8
-Job name:      afmfold_gen
-Resources:     cpu=6,gres/gpu:a100=1,mem=64G,node=1
-Rsrc Used:     cput=2-12:00:24,vmem=0,walltime=10:00:04,mem=12216K,energy_used=0
-Partition:     gpu-a100
-QOS:           inferno
-Nodes:         atl1-1-01-006-3-0
----------------------------------------

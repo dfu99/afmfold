@@ -1,37 +1,0 @@
----------------------------------------
-Begin Slurm Prolog: Dec-27-2025 17:21:57
-Job ID:    3079739
-User ID:   dfu71
-Account:   gts-yke8
-Job name:  afmfold_gen
-Partition: gpu-a100
-QOS:       inferno
----------------------------------------
-/storage/scratch1/6/dfu71/venv_afmfold/lib/python3.12/site-packages/mdtraj/geometry/order.py:25: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
-  from pkg_resources import parse_version
-/storage/scratch1/6/dfu71/venv_afmfold/lib/python3.12/site-packages/torch/cuda/__init__.py:56: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
-  import pynvml  # type: ignore[import]
-Try to find the ccd cache data in the code directory for inference.
-
-Generating candidates with parameters:
-  native_pdb   : storage/4G1E.pdb
-  name         : 4G1E
-  json_file    : storage/4G1E-ea24b86d99cd41569c9f93d49184e362-add-msa.json
-  out_dir      : data/candidates1
-  max_deviation: 50.0
-  grid_size    : 5.0
-  max_trial    : 3
-
-  0%|          | 0/16 [00:00<?, ?it/s]  6%|▋         | 1/16 [32:05<8:01:22, 1925.50s/it] 12%|█▎        | 2/16 [1:03:59<7:27:44, 1918.87s/it] 19%|█▉        | 3/16 [1:35:54<6:55:23, 1917.16s/it] 25%|██▌       | 4/16 [2:39:53<8:55:11, 2675.93s/it] 31%|███▏      | 5/16 [3:43:55<9:27:37, 3096.17s/it] 38%|███▊      | 6/16 [4:47:49<9:17:51, 3347.13s/it] 44%|████▍     | 7/16 [5:51:49<8:46:14, 3508.30s/it] 50%|█████     | 8/16 [7:27:52<9:23:29, 4226.13s/it] 56%|█████▋    | 9/16 [9:04:03<9:09:22, 4708.87s/it] 62%|██████▎   | 10/16 [10:40:04<8:23:22, 5033.67s/it] 69%|██████▉   | 11/16 [12:15:55<7:17:47, 5253.41s/it] 75%|███████▌  | 12/16 [13:51:39<6:00:10, 5402.64s/it] 81%|████████▏ | 13/16 [15:27:29<4:35:23, 5507.81s/it] 88%|████████▊ | 14/16 [17:03:37<3:06:12, 5586.38s/it] 94%|█████████▍| 15/16 [18:39:23<1:33:54, 5634.50s/it]100%|██████████| 16/16 [20:15:07<00:00, 5667.39s/it]  100%|██████████| 16/16 [20:15:07<00:00, 4556.70s/it]
----------------------------------------
-Begin Slurm Epilog: Dec-28-2025 13:37:37
-Job ID:        3079739
-User ID:       dfu71
-Account:       gts-yke8
-Job name:      afmfold_gen
-Resources:     cpu=6,gres/gpu:a100=1,mem=64G,node=1
-Rsrc Used:     cput=5-01:34:00,vmem=0,walltime=20:15:40,mem=9828K,energy_used=0
-Partition:     gpu-a100
-QOS:           inferno
-Nodes:         atl1-1-01-006-3-0
----------------------------------------
