@@ -11,23 +11,15 @@ T_START_LIST="0.1,0.2,0.4"
 N_SAMPLE=2
 
 SEEDS=(101 102 103 104 105 106 107 108)
-NUM_SHARDS=4
 
-CHUNK_SIZE=$(( ( ${#SEEDS[@]} + NUM_SHARDS - 1 ) / NUM_SHARDS ))
-
-for SHARD_ID in $(seq 0 $((NUM_SHARDS - 1))); do
-  START=$((SHARD_ID * CHUNK_SIZE))
-  END=$((START + CHUNK_SIZE))
-  CHUNK=("${SEEDS[@]:$START:$CHUNK_SIZE}")
-  if [ ${#CHUNK[@]} -eq 0 ]; then
-    continue
-  fi
-  SEED_LIST=$(IFS=,; echo "${CHUNK[*]}")
-  sbatch -- protenix_sweep.sh \
+for SEED in "${SEEDS[@]}"; do
+  LOG_DIR="${OUT_DIR}/seed_${SEED}"
+  mkdir -p "$LOG_DIR"
+  sbatch --output="${LOG_DIR}/slurm_%j.out" --error="${LOG_DIR}/slurm_%j.err" -- protenix_sweep.sh \
     "$JSON_FILE" \
     "$OUT_DIR" \
     "$BC_PDB" \
-    "$SEED_LIST" \
+    "$SEED" \
     "$EO_OFFSETS" \
     "$EC_OFFSETS" \
     "$Y_MAX_LIST" \
