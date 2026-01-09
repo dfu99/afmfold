@@ -29,9 +29,9 @@ srun python3 scripts/protenix_unit_sweep.py \
   --out-dir "$OUT_DIR" \
   --bc-pdb "$BC_PDB" \
   --name 4G1E \
-  --eo-offsets "$EO_OFFSETS" \
-  --ec-offsets "$EC_OFFSETS" \
-  --y-max-list "$Y_MAX_LIST" \
-  --t-start-list "$T_START_LIST" \
-  --seeds "$SEEDS" \
+  --eo-offsets="$EO_OFFSETS" \
+  --ec-offsets="$EC_OFFSETS" \
+  --y-max-list="$Y_MAX_LIST" \
+  --t-start-list="$T_START_LIST" \
+  --seeds="$SEEDS" \
   --n-sample "$N_SAMPLE"
