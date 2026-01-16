@@ -1,0 +1,33 @@
+pdb_id	conformation	method	resolution	ligands_tags	notes
+1JV2	bent_closed	X-ray	3.1	none	baseline ectodomain, closed headpiece
+1L5G	bent_closed_with_ligand	X-ray	3.2	RGD_ligand	remove ligand for alignment
+1M1X	bent_closed	X-ray	3.3	Mn2+	metal only; keep or remove as needed
+1U8C	partial_domain	X-ray	3.1	none	PSI domain only; not full ectodomain
+3IJE	bent_closed	X-ray	2.9	TM_fragment	ectodomain + short TM fragment
+4G1E	bent_closed	X-ray	3.0	coiled_coil_tag	tag residues require trimming
+4G1M	bent_closed	X-ray	2.9	coiled_coil_tag	re-refined 4G1E; tag residues require trimming
+4MMX	bent_closed_with_ligand	X-ray	3.32	Fn10_domain	RGD-containing fibronectin domain
+4MMY	bent_closed_with_ligand	X-ray	3.183	Fn10_domain	RGD-containing fibronectin domain
+4MMZ	bent_closed_with_ligand	X-ray	3.1	Fn10_domain	RGD-containing fibronectin domain
+4O02	bent_closed_with_antibody	X-ray	3.605	Fab_fragment	remove Fab chains
+6AVQ	extended_closed	EM	35.0	LM609_antibody	conformation from LM609 study
+6AVR	extended_intermediate	EM	35.0	LM609_antibody	intermediate conformation (per title)
+6AVU	extended_open	EM	35.0	LM609_antibody	open conformation (per title)
+6MK0	bent_closed_with_ligand	X-ray	3.005	TDI-4161	antagonist bound
+6MSL	bent_closed_with_ligand	X-ray	3.104	EETI-II	ligand bound
+6MSU	bent_closed_with_ligand	X-ray	3.11	EETI-II	ligand bound
+6NAJ	bent_closed_with_ligand	X-ray	3.1	Hr10(Fn10_variant)	ligand bound
+8IJ5	conformation_unknown	EM	3.0	none	cryo-EM avb3; map to state in paper
+8XEI	conformation_1	EM	2.9	none	conformation series in paper
+8XEK	conformation_2	EM	2.9	none	conformation series in paper
+8XEL	conformation_3	EM	2.8	none	conformation series in paper
+8XEN	conformation_4	EM	3.2	none	conformation series in paper
+8XER	conformation_1_with_ligand	EM	3.0	Cilengitide	ligand bound
+8XEZ	conformation_5	EM	3.15	none	conformation series in paper
+8XF6	conformation_2_with_ligand	EM	3.1	Cilengitide	ligand bound
+8XFG	conformation_1_with_ligand	EM	2.8	Cyclo(RGDFK)	ligand bound
+8XFO	conformation_2_with_ligand	EM	3.0	Cyclo(RGDFK)	ligand bound
+8ZDF	conformation_2_with_ligand	EM	3.16	CWHM-12	ligand bound
+8ZDG	conformation_1_with_ligand	EM	3.03	CWHM-12	ligand bound
+9IUJ	conformation_unknown_with_ligand	EM	2.78	Rhodostomin	ligand bound
+9JEI	conformation_unknown_with_ligand	EM	3.16	Echistatin	ligand bound
