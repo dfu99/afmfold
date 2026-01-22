@@ -43,13 +43,13 @@ def parse_args():
     )
     parser.add_argument(
         "--input-dir",
-        default="storage/avb3_refs/stripped_pdb",
+        default="storage/avb3_refs/trimmed_pdb",
         help="Directory containing stripped PDBs.",
     )
     parser.add_argument(
         "--out-dir",
-        default="storage/avb3_refs/renders",
-        help="Directory to write PNG renders.",
+        default="storage/avb3_refs/trimmed_renders",
+        help="Directory to write PNG stripped renders.",
     )
     parser.add_argument(
         "--supersample",
@@ -72,7 +72,11 @@ def main(session):
     pdb_paths = sorted(glob.glob(os.path.join(input_dir, "*.pdb")))
     if not pdb_paths:
         raise SystemExit(f"No PDB files found in {input_dir}")
-    os.makedirs(out_dir, exist_ok=True)
+    try:
+        os.makedirs(out_dir, exist_ok=True)
+        print(f"Output directory: {out_dir}")
+    except Exception as e:
+        raise SystemExit(f"Failed to create output directory {out_dir}: {e}")
 
     for pdb_path in pdb_paths:
         run(session, f'open "{pdb_path}"')
