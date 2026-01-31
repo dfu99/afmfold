@@ -16,7 +16,7 @@ The following code examples illustrate how to generate noiseless training data f
 
 1. **Prepare a candidate conformation set** using [generate_candidates.py](generate_candidates.py).
 
-    Notes: For a mechanically-sensitive protein with highly distinct conformational states, such as integrin avb3, this does not work as constraint-based generation with Protenix cannot explore distant conformational changes (like BC to EC/EO conformations)
+    Addendum Notes NOT from the Author: For a mechanically-sensitive protein with highly distinct conformational states, such as integrin avb3, this does not work as constraint-based generation with Protenix cannot explore distant conformational changes (like BC to EC/EO conformations)
     
     ```bash
     # Prepare output directories
