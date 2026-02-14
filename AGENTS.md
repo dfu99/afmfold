@@ -29,3 +29,13 @@
 ## Integrin caveat (user note)
 - Large-scale conformational changes (e.g., BC -> EC/EO) may not be reachable by CV-guided Protenix from a single reference.
 - Consider multiple reference structures, different CVs, or an external ensemble (MD, AlphaFlow, BioEmu, AF2 MSA subsampling) to cover the conformational space before CNN training.
+
+## Progress note (2026-02-01)
+- Confirmed the first workflow loop for now.
+- Workflow so far: start with OpenMM-based RoyalMD; use pulling forces to steer MD of a bent-conformation integrin into an extended conformation. Sample intermediate (increasingly pulled) states, then remove pulling force and simulate again to relax back into realistic conformations (avoid stretched chains). This produced ~300 frames and ~20 ns in that conformational regime.
+- We currently used only a few frames (3) to test the AFMFold workflow of generating pseudo-AFM images from the RoyalMD PDBs. This replaces the expensive grid-based Protenix search.
+- Next validation: because inference uses Protenix guided by CVs measured from AFM images, we need to check whether CVs measured from a RoyalMD-generated PDB produce a Protenix output with a similar structure (or if it rebounds to a bent-closed state).
+- Plan order correction: do the Protenix CV test first before generating many more RoyalMD conformers. Then, if it works, generate more RoyalMD conformations, add them to `MD-candidates`, generate images, and run Protenix inference at scale.
+
+## Progress note (2026-02-14)
+- Template hack using an extended/pulled conformation as a template still produced a bent conformation after inference.

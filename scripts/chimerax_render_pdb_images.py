@@ -2,6 +2,8 @@
 import argparse
 import glob
 import os
+import json
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -18,6 +20,26 @@ except Exception:  # pragma: no cover - fallback for non-ChimeraX execution
             "CHIMERAX_BIN",
             "/Applications/ChimeraX-1.10.1.app/Contents/MacOS/ChimeraX",
         )
+
+        env = os.environ.copy()
+        for key in list(env):
+            if key.startswith("CONDA"):
+                env.pop(key, None)
+        for key in [
+            "PYTHONHOME",
+            "PYTHONPATH",
+            "PYTHONUSERBASE",
+            "PYTHONEXECUTABLE",
+            "PYTHONSTARTUP",
+            "PYTHONWARNINGS",
+            "PYTHONNOUSERSITE",
+            "VIRTUAL_ENV",
+            "LD_LIBRARY_PATH",
+            "DYLD_LIBRARY_PATH",
+            "DYLD_FALLBACK_LIBRARY_PATH",
+        ]:
+            env.pop(key, None)
+        env["PYTHONNOUSERSITE"] = "1"
         script_path = os.path.abspath(__file__)
         temp_dir = tempfile.mkdtemp(prefix="chimerax_")
         safe_script = os.path.join(temp_dir, "chimerax_render_pdb_images.py")
@@ -25,11 +47,25 @@ except Exception:  # pragma: no cover - fallback for non-ChimeraX execution
             os.symlink(script_path, safe_script)
         except FileExistsError:
             pass
-        cmd = [chimerax_bin, "--script", safe_script, "--"]
+        env["CHIMERAX_SCRIPT_ARGS"] = json.dumps(sys.argv[1:])
+        cmd = [chimerax_bin, "--script", safe_script]
         if not _keep_open(sys.argv[1:]):
             cmd.insert(1, "--exit")
-        cmd.extend(sys.argv[1:])
-        subprocess.run(cmd, check=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        if result.returncode != 0:
+            print("ChimeraX invocation failed.")
+            print("Command:", " ".join(cmd))
+            print("Note: cleared CONDA/PYTHON env vars for ChimeraX isolation.")
+            if result.stdout:
+                print("--- ChimeraX stdout ---")
+                print(result.stdout)
+            if result.stderr:
+                print("--- ChimeraX stderr ---")
+                print(result.stderr)
+            raise SystemExit(
+                "ChimeraX exited with a non-zero status. "
+                "Verify the ChimeraX path or set CHIMERAX_BIN."
+            )
 
     if __name__ == "__main__":
         _relaunch_with_chimerax()
@@ -37,7 +73,20 @@ except Exception:  # pragma: no cover - fallback for non-ChimeraX execution
     raise
 
 
+def _apply_env_args():
+    raw = os.environ.get("CHIMERAX_SCRIPT_ARGS")
+    if not raw:
+        return
+    try:
+        extra = json.loads(raw)
+    except json.JSONDecodeError:
+        extra = shlex.split(raw)
+    if isinstance(extra, list):
+        sys.argv = [sys.argv[0]] + [str(arg) for arg in extra]
+
+
 def parse_args():
+    _apply_env_args()
     parser = argparse.ArgumentParser(
         description="Render per-PDB PNGs in ChimeraX for external grid assembly."
     )
